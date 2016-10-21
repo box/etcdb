@@ -19,6 +19,11 @@ from etcdb.etcdtimestamp import EtcdTimestamp
 from etcdb.sqlparser.sql_tree import SQLTree
 
 
+@pytest.fixture
+def t_2016_9_21_23_10_3():
+    return 1474499403.0
+
+
 def test_EtcdDate():
     d = EtcdDate(2016, 9, 11)
     assert d.year == 2016
@@ -75,28 +80,28 @@ def test_Timestamp():
     assert ts.second == 10
 
 
-def test_DateFromTicks():
-    d = DateFromTicks(1474499403)
-    assert d.year == 2016
-    assert d.month == 9
-    assert d.day == 21
+def test_DateFromTicks(t_2016_9_21_23_10_3):
+    d = DateFromTicks(t_2016_9_21_23_10_3)
+    assert d.year == time.localtime(t_2016_9_21_23_10_3).tm_year
+    assert d.month == time.localtime(t_2016_9_21_23_10_3).tm_mon
+    assert d.day == time.localtime(t_2016_9_21_23_10_3).tm_mday
 
 
-def test_TimeFromTicks():
-    t = TimeFromTicks(1474499403)
-    assert t.hour == 16
-    assert t.minute == 10
-    assert t.second == 3
+def test_TimeFromTicks(t_2016_9_21_23_10_3):
+    t = TimeFromTicks(t_2016_9_21_23_10_3)
+    assert t.hour == time.localtime(t_2016_9_21_23_10_3).tm_hour
+    assert t.minute == time.localtime(t_2016_9_21_23_10_3).tm_min
+    assert t.second == time.localtime(t_2016_9_21_23_10_3).tm_sec
 
 
-def test_TimestampFromTicks():
-    d = TimestampFromTicks(1474499403)
-    assert d.year == 2016
-    assert d.month == 9
-    assert d.day == 21
-    assert d.hour == 16
-    assert d.minute == 10
-    assert d.second == 3
+def test_TimestampFromTicks(t_2016_9_21_23_10_3):
+    d = TimestampFromTicks(t_2016_9_21_23_10_3)
+    assert d.year == time.localtime(t_2016_9_21_23_10_3).tm_year
+    assert d.month == time.localtime(t_2016_9_21_23_10_3).tm_mon
+    assert d.day == time.localtime(t_2016_9_21_23_10_3).tm_mday
+    assert d.hour == time.localtime(t_2016_9_21_23_10_3).tm_hour
+    assert d.minute == time.localtime(t_2016_9_21_23_10_3).tm_min
+    assert d.second == time.localtime(t_2016_9_21_23_10_3).tm_sec
 
 
 def test_Binary():
