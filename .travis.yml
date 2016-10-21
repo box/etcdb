@@ -14,7 +14,7 @@ deploy:
   password:
     secure: C2oaOIOm9lNaLRCFdxOvO9S0b6AjFZT9bhBB6QrqZTiV76lpCMlxOF/rldVr8gaptNp93LEdlZmzmDJQlR1DQ3NxVPqtkap1YRBd2LJAE/gILaM6xcU3UZj01S/UVW+NJrU5eKoaqiQmoyn7GmAETqQFfbGrFs2d6ekxFuTsAUQf6pyjS0qWrvzO2x2grtkXpqeKWAIe+iTFHS6mOnTVU1Hw3HwmcnPsCeg7KPl4uhJmGYUXjqZe46ejqoGa6/sxhjBeOhjhZOu3o0eKUy2hKlnxn6A7uB2qjGApK3PI9DNHgxBaofAt+fYefv8vbojPf3cI4X+l7p93Z/RjfgIRYc+jFjUF3M+6QDk+hedEtObT+NxP12IbbWO8L+XvF9v7dswgGCevDrS9wo61fEWfGPhu2FiQCm6x6LOBlJrhIdA0+V2L3VtYoqUZzb6/j5REOyHcnEayl3Zpd8T5QJMpqwAIYaomHRds5E4yrTFYt+OWwJ6zB8FFIx2xz4vx+BRvRrUvXHgcYXwbepZ/VHc6yPnjy4u2nNciYBH/kDw73FpYYZty4igTKiVOHTH4tNJmbWyMMQb1718hCXrosE2AhhUM+a+weJHztn74841/QKMi4z7QZXPk55xVYdqehtERAhvd9OAUNkv2jRhDFH/folr4aYKQ+sXRjrvupsJ/6yo=
   on:
-    tags: true
+    tags: false
     distributions: sdist bdist_wheel
     repo: box/etcdb
     branch: master
