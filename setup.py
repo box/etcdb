@@ -1,7 +1,13 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
+import os
 
 from setuptools import setup, find_packages
+
+# This is to workaround error: Operation not permitted
+# http://stackoverflow.com/questions/7719380/python-setup-py-sdist-error-operation-not-permitted
+
+del os.link
 
 with open('README.rst') as readme_file:
     readme = readme_file.read()
@@ -19,7 +25,7 @@ test_requirements = [
 
 setup(
     name='etcdb',
-    version='1.0.0',
+    version='1.0.3',
     description="PEP 249 compatible driver for Etcd",
     long_description=readme + '\n\n' + history,
     author="Box TechOps Database Team",
