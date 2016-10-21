@@ -3,19 +3,19 @@
 nodes = [
     { :hostname   => 'client',
       :ip         => '10.0.1.9',
-      :box        => 'bento/centos-7.1',
+      :box        => 'bento/centos-6.7',
     },
     { :hostname   => 'infra0',
       :ip         => '10.0.1.10',
-      :box        => 'bento/centos-7.1',
+      :box        => 'bento/centos-6.7',
     },
     { :hostname   => 'infra1',
       :ip         => '10.0.1.11',
-      :box        => 'bento/centos-7.1',
+      :box        => 'bento/centos-6.7',
     },
     { :hostname   => 'infra2',
       :ip         => '10.0.1.12',
-      :box        => 'bento/centos-7.1',
+      :box        => 'bento/centos-6.7',
     }
 ]
 
@@ -23,7 +23,7 @@ nodes = [
 VAGRANTFILE_API_VERSION = '2'
 
 $script = <<SCRIPT
-rpm -Uhv https://yum.puppetlabs.com/puppetlabs-release-el-7.noarch.rpm
+rpm -Uhv https://yum.puppetlabs.com/puppetlabs-release-el-6.noarch.rpm
 yum -y install puppet
 SCRIPT
 
@@ -43,7 +43,7 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
 
             end
         end
-        config.vm.synced_folder '..', '/pyetcd'
+        config.vm.synced_folder '..', '/etcdb'
     end
 
     config.vm.provision 'shell', inline: $script

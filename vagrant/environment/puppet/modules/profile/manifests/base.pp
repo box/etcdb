@@ -18,20 +18,38 @@ class profile::base {
     }
 
     package { 'epel-release':
-        provider => rpm,
-        source => 'http://dl.fedoraproject.org/pub/epel/7/x86_64/e/epel-release-7-8.noarch.rpm'
+        ensure => installed
     }
 
-    $packages = [ 'vim-enhanced', 'python-pip']
+    package { 'ius-release':
+        ensure => installed,
+        provider => rpm,
+        source => 'https://centos6.iuscommunity.org/ius-release.rpm'
+
+    }
+
+    $packages = ['vim-enhanced', 'python-pip', 'python27']
 
     package { $packages:
         ensure => installed,
-        require => [Package['epel-release']]
+        require => [
+            Package['epel-release'],
+            Package['ius-release']
+        ]
+    }
+
+    file { '/usr/bin/pip-python':
+        ensure => 'link',
+        target => '/usr/bin/pip',
+        require => Package['python-pip']
     }
 
     package { ['tox']:
         ensure => installed,
         provider => pip,
-        require => Package['python-pip']
+        require => [
+            Package['python-pip'],
+            File['/usr/bin/pip-python']
+        ]
     }
 }
