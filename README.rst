@@ -3,6 +3,9 @@ Etcd Database Driver
 ====================
 
 
+.. image:: https://badges.gitter.im/box/etcdb.svg
+    :alt: Join the chat at https://gitter.im/box/etcdb
+    :target: https://gitter.im/box/etcdb?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge
 
 .. image:: https://img.shields.io/pypi/v/etcdb.svg
     :target: https://pypi.python.org/pypi/etcdb
