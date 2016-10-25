@@ -14,11 +14,6 @@ Etcd Database Driver
     :target: https://etcdb.readthedocs.io/en/latest/?badge=master
     :alt: Documentation Status
 
-.. image:: https://pyup.io/repos/github/box/etcdb/shield.svg
-    :target: https://pyup.io/repos/github/box/etcdb/
-    :alt: Updates
-
-
 
 PEP 249 compatible driver for Etcd
 
