@@ -10,8 +10,8 @@ Etcd Database Driver
 .. image:: https://img.shields.io/travis/box/etcdb.svg
     :target: https://travis-ci.org/box/etcdb
 
-.. image:: https://readthedocs.org/projects/etcdb/badge/?version=latest
-    :target: https://etcdb.readthedocs.io/en/latest/?badge=latest
+.. image:: https://readthedocs.org/projects/etcdb/badge/?version=master
+    :target: https://etcdb.readthedocs.io/en/latest/?badge=master
     :alt: Documentation Status
 
 .. image:: https://pyup.io/repos/github/box/etcdb/shield.svg
