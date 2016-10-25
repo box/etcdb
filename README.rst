@@ -4,9 +4,20 @@ Etcd Database Driver
 
 
 
+.. image:: https://img.shields.io/pypi/v/etcdb.svg
+    :target: https://pypi.python.org/pypi/etcdb
+
+.. image:: https://img.shields.io/travis/box/etcdb.svg
+    :target: https://travis-ci.org/box/etcdb
+
+.. image:: https://readthedocs.org/projects/etcdb/badge/?version=latest
+    :target: https://etcdb.readthedocs.io/en/latest/?badge=latest
+    :alt: Documentation Status
+
 .. image:: https://pyup.io/repos/github/box/etcdb/shield.svg
-     :target: https://pyup.io/repos/github/box/etcdb/
-     :alt: Updates
+    :target: https://pyup.io/repos/github/box/etcdb/
+    :alt: Updates
+
 
 
 PEP 249 compatible driver for Etcd
