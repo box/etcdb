@@ -121,7 +121,6 @@ def p_create_table_statement(p):
     """create_table_statement : CREATE TABLE identifier '(' create_definition_list ')'"""
     _parse_tree.query_type = "CREATE_TABLE"
     _parse_tree.table = p[3]
-    print('table = %s' % p[3])
 
 
 def p_create_database_statement(p):
@@ -260,6 +259,10 @@ def p_q_STRING(p):
 def p_select_statement(p):
     """select_statement : SELECT select_expr_list opt_FROM opt_WHERE opt_ORDER_BY opt_LIMIT"""
     _parse_tree.query_type = "SELECT"
+    try:
+        _parse_tree.limit = int(p[6])
+    except TypeError:
+        _parse_tree.limit = None
 
 
 def p_opt_ORDER_BY(p):
@@ -274,9 +277,14 @@ def p_opt_ORDER_DIRECTION(p):
         | DESC """
 
 
+def p_opt_LIMIT_empty(p):
+    """opt_LIMIT : """
+    p[0] = None
+
+
 def p_opt_LIMIT(p):
-    """opt_LIMIT :
-        | LIMIT NUMBER"""
+    """opt_LIMIT : LIMIT NUMBER"""
+    p[0] = p[2]
 
 
 def p_show_tables_statement(p):

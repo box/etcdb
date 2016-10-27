@@ -193,7 +193,7 @@ class Cursor(object):
                 if expression['type'] == 'variable':
                     variable_exists = True
 
-            result_keys = self._get_pks(db, tbl)
+            result_keys = self._get_pks(db, tbl, tree)
 
             if function_exists or variable_exists:
                 result_keys.append(None)
@@ -280,12 +280,13 @@ class Cursor(object):
     def _eval_function_version(self):
         return self.connection.client.version()
 
-    def _get_pks(self, db, table):
+    def _get_pks(self, db, table, tree=None):
         """
         Get list of primary key values for a given table
 
         :param db: database name
         :param table: table name
+        :param tree: instance of SQLTree
         :return: list of values or empty list if table is empty
         """
         if not table:
@@ -293,12 +294,23 @@ class Cursor(object):
         pks = []
         table_key = "/{db}/{tbl}".format(db=db, tbl=table)
         etcd_result = self.connection.client.read(table_key)
+        pk = self._get_pk(db, table)
+        pk_name = self._get_pk_name(db, table)
+        pk_type = pk[pk_name]['type']
         try:
-            for n in etcd_result.node['nodes']:
+            nodes = etcd_result.node['nodes']
+
+            for n in nodes:
                 pk_key = n['key']
                 pk = pk_key.replace(table_key + '/', '', 1)
-                if not pk.startswith('.'):
-                    pks.append(pk)
+                if pk_type in ['INT', 'INTEGER', 'SMALLINT', 'TINYINT']:
+                    pk = int(pk)
+                pks.append(pk)
+
+            pks = sorted(pks)
+            if tree and tree.limit is not None:
+                pks = pks[:tree.limit]
+
         except KeyError:
             pass
         return pks
@@ -406,14 +418,19 @@ class Cursor(object):
         value = etcd_result.node['value']
         return json.loads(value)
 
-    def _get_pk_name(self, db, tbl):
+    def _get_pk(self, db, tbl):
         for f, v in self._get_table_fields(db, tbl).iteritems():
             try:
                 if v['options']['primary']:
-                    return f
+                    return {
+                        f: v
+                    }
             except KeyError:
                 pass
         return None
+
+    def _get_pk_name(self, db, tbl):
+        return self._get_pk(db, tbl).keys()[0]
 
     def _execute_insert(self, tree):
         db = self._get_current_db(tree)

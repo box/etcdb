@@ -8,6 +8,7 @@ class SQLTree(object):
         self.table = None
         self.fields = {}
         self.options = {}
+        self.limit = None
 
     def reset(self):
         self.__init__()

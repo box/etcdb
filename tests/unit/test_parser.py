@@ -725,6 +725,7 @@ def test_select_with_limit(parser):
     assert tree.query_type == "SELECT"
     assert tree.table == 'auth_user'
     assert tree.db is None
+    assert tree.limit == 21
 
 
 def test_insert_create_super_user(parser):

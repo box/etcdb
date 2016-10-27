@@ -5,11 +5,11 @@ import json
 import mock
 import pytest
 import time
-from pyetcd import EtcdResult, EtcdNodeExist, EtcdNotFile, EtcdKeyNotFound
+from pyetcd import EtcdResult, EtcdNodeExist, EtcdKeyNotFound
 from pyetcd.client import Client
 
 from etcdb import NotSupportedError, Time, Timestamp, DateFromTicks, TimeFromTicks, TimestampFromTicks, Binary, Date, \
-    _split_version, ProgrammingError, OperationalError, LOCK_WAIT_TIMEOUT, EtcdTableLock
+    _split_version, ProgrammingError, OperationalError, LOCK_WAIT_TIMEOUT
 from etcdb.connection import Connection
 from etcdb.cursor import Cursor, ColInfo
 from etcdb.etcddate import EtcdDate
@@ -569,6 +569,25 @@ def test_create_table_pk_must_be_not_null(cursor):
 
 
 @mock.patch.object(Client, 'read')
+def test_get_pk(mock_read, cursor):
+    etcd_result = mock.Mock()
+    etcd_result.node = {
+        'key': '/foo/bar/_fields',
+        'value': '{"id": {"type": "INT", "options": {"nullable": false, "primary": true}}}'
+    }
+    mock_read.return_value = etcd_result
+    assert cursor._get_pk('foo', 'bar') == {
+        'id': {
+            'type': 'INT',
+            'options': {
+                'nullable': False,
+                'primary': True
+            }
+        }
+    }
+
+
+@mock.patch.object(Client, 'read')
 def test_get_pk_name(mock_read, cursor):
     etcd_result = mock.Mock()
     etcd_result.node = {
@@ -641,9 +660,18 @@ def test_insert_table_auto_incremented(mock_set_next_auto_inc,
     mock_release_write_lock.assert_called_once_with('foo', 't3')
 
 
-@pytest.mark.parametrize('db,tbl,payload,result', [
+@pytest.mark.parametrize('db,tbl,pk,payload,result', [
     (
         'foo', 'bar',
+        {
+            'id': {
+                'type': 'INT',
+                'options': {
+                    'nullable': False,
+                    'primary': True
+                }
+            }
+        },
         """
         {
                 "action": "get",
@@ -672,10 +700,19 @@ def test_insert_table_auto_incremented(mock_set_next_auto_inc,
                 }
             }
         """,
-        ['1', '2', '3']
+        [1, 2, 3]
     ),
     (
         'foo', 'bar',
+        {
+            'id': {
+                'type': 'INT',
+                'options': {
+                    'nullable': False,
+                    'primary': True
+                }
+            }
+        },
         """
         {
                 "action": "get",
@@ -688,16 +725,101 @@ def test_insert_table_auto_incremented(mock_set_next_auto_inc,
     ),
     (
         'a', 't1',
-        '{"action":"get","node":{"key":"/a/t1","dir":true,"nodes":[{"key":"/a/t1/1","value":"{\\"id\\": \\"1\\"}","modifiedIndex":39,"createdIndex":39},{"key":"/a/t1/2","value":"{\\"id\\": \\"2\\"}","modifiedIndex":40,"createdIndex":40},{"key":"/a/t1/10","value":"{\\"id\\": \\"10\\"}","modifiedIndex":41,"createdIndex":41}],"modifiedIndex":37,"createdIndex":37}}',
-        ['1', '2', '10']
+        {
+            'id': {
+                'type': 'INT',
+                'options': {
+                    'nullable': False,
+                    'primary': True
+                }
+            }
+        },
+        """
+        {
+            "action": "get",
+            "node": {
+                "createdIndex": 37,
+                "dir": true,
+                "key": "/a/t1",
+                "modifiedIndex": 37,
+                "nodes": [
+                    {
+                        "createdIndex": 39,
+                        "key": "/a/t1/1",
+                        "modifiedIndex": 39,
+                        "value": "{\\"id\\": \\"1\\"}"
+                    },
+                    {
+                        "createdIndex": 40,
+                        "key": "/a/t1/2",
+                        "modifiedIndex": 40,
+                        "value": "{\\"id\\": \\"2\\"}"
+                    },
+                    {
+                        "createdIndex": 41,
+                        "key": "/a/t1/10",
+                        "modifiedIndex": 41,
+                        "value": "{\\"id\\": \\"10\\"}"
+                    }
+                ]
+            }
+        }
+        """,
+        [1, 2, 10]
+    ),
+    (
+        'a', 't1',
+        {
+            'id': {
+                'type': 'VARCHAR',
+                'options': {
+                    'nullable': False,
+                    'primary': True
+                }
+            }
+        },
+        """
+        {
+            "action": "get",
+            "node": {
+                "createdIndex": 37,
+                "dir": true,
+                "key": "/a/t1",
+                "modifiedIndex": 37,
+                "nodes": [
+                    {
+                        "createdIndex": 39,
+                        "key": "/a/t1/aaa",
+                        "modifiedIndex": 39,
+                        "value": "{\\"id\\": \\"aaa\\"}"
+                    },
+                    {
+                        "createdIndex": 40,
+                        "key": "/a/t1/ccc",
+                        "modifiedIndex": 40,
+                        "value": "{\\"id\\": \\"ccc\\"}"
+                    },
+                    {
+                        "createdIndex": 41,
+                        "key": "/a/t1/bbb",
+                        "modifiedIndex": 41,
+                        "value": "{\\"id\\": \\"bbb\\"}"
+                    }
+                ]
+            }
+        }
+        """,
+        ['aaa', 'bbb', 'ccc']
     )
 ])
 @mock.patch.object(Client, 'read')
-def test_get_pks_returns_pks(mock_read, db, tbl, payload, result, cursor):
+@mock.patch.object(Cursor, '_get_pk')
+def test_get_pks_returns_pks(mock_get_pk, mock_read, db, tbl, pk, payload, result, cursor):
     response = mock.MagicMock()
     response.content = payload
     etcd_result = EtcdResult(response)
     mock_read.return_value = etcd_result
+    mock_get_pk.return_value = pk
     assert cursor._get_pks(db, tbl) == result
 
 
@@ -1028,7 +1150,7 @@ def test_lastrowid(mock_write,
     assert cursor.lastrowid == 10
 
 
-@pytest.mark.parametrize('payload,rowcount',[
+@pytest.mark.parametrize('payload,rowcount', [
     (
         """
         {
@@ -1098,3 +1220,107 @@ def test_count_star(mock_read,
     assert cursor.execute(query) == 1
     assert cursor.fetchone()[0] == rowcount
     mock_read.assert_called_once_with('/foo/foo_config')
+
+
+@pytest.mark.parametrize('payload,limit,result', [
+    (
+        """
+        {
+                "action": "get",
+                "node": {
+                    "dir": true,
+                    "nodes": [
+                        {
+                            "createdIndex": 20,
+                            "dir": true,
+                            "key": "/foo/bar/1",
+                            "modifiedIndex": 20
+                        },
+                        {
+                            "createdIndex": 19,
+                            "dir": true,
+                            "key": "/foo/bar/2",
+                            "modifiedIndex": 19
+                        },
+                        {
+                            "createdIndex": 19,
+                            "dir": true,
+                            "key": "/foo/bar/3",
+                            "modifiedIndex": 19
+                        }
+                    ]
+                }
+            }
+        """,
+        2,
+        [1, 2]
+    ),
+    (
+        """
+        {
+                "action": "get",
+                "node": {
+                    "dir": true
+                }
+            }
+        """,
+        1,
+        []
+    ),
+    (
+        """
+        {
+            "action": "get",
+            "node": {
+                "createdIndex": 37,
+                "dir": true,
+                "key": "/foo/bar",
+                "modifiedIndex": 37,
+                "nodes": [
+                    {
+                        "createdIndex": 39,
+                        "key": "/foo/bar/1",
+                        "modifiedIndex": 39,
+                        "value": "{\\"id\\": \\"1\\"}"
+                    },
+                    {
+                        "createdIndex": 40,
+                        "key": "/foo/bar/10",
+                        "modifiedIndex": 40,
+                        "value": "{\\"id\\": \\"10\\"}"
+                    },
+                    {
+                        "createdIndex": 41,
+                        "key": "/foo/bar/20",
+                        "modifiedIndex": 41,
+                        "value": "{\\"id\\": \\"20\\"}"
+                    }
+                ]
+            }
+        }
+        """,
+        2,
+        [1, 10]
+    )
+])
+@mock.patch.object(Client, 'read')
+@mock.patch.object(Cursor, '_get_pk')
+def test_get_pks_with_limit(mock_get_pk, mock_read, payload, limit, result, cursor):
+    response = mock.MagicMock()
+    response.content = payload
+    etcd_result = EtcdResult(response)
+    mock_read.return_value = etcd_result
+    tree = SQLTree()
+    tree.limit = limit
+
+    mock_get_pk.return_value = {
+        'id': {
+            'type': 'INT',
+            'options': {
+                'nullable': False,
+                'primary': True
+            }
+        }
+    }
+    assert cursor._get_pks('foo', 'bar', tree=tree) == result
+
