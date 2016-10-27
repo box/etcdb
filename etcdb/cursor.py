@@ -201,6 +201,22 @@ class Cursor(object):
             for pk in result_keys:
                 row = self.get_table_row(tree, pk)
                 rows += (row,)
+
+            if tree.order['by'] and tree.order['by'] in columns:
+                pos = columns.index(tree.order['by'])
+
+                def getKey(item):
+                    return item[pos]
+
+                reverse = False
+                if tree.order['direction'] == 'DESC':
+                    reverse = True
+
+                rows = sorted(rows, reverse=reverse, key=getKey)
+
+            if tree and tree.limit is not None:
+                rows = rows[:tree.limit]
+
             return columns, rows
         finally:
             self._release_read_lock(db, tbl, lock_id)
@@ -308,8 +324,6 @@ class Cursor(object):
                 pks.append(pk)
 
             pks = sorted(pks)
-            if tree and tree.limit is not None:
-                pks = pks[:tree.limit]
 
         except KeyError:
             pass

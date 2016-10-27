@@ -9,6 +9,10 @@ class SQLTree(object):
         self.fields = {}
         self.options = {}
         self.limit = None
+        self.order = {
+            'by': None,
+            'direction': 'ASC'
+        }
 
     def reset(self):
         self.__init__()

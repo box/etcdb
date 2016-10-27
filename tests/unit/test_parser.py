@@ -778,15 +778,14 @@ def test_select_count_star(parser):
     ]
 
 
-@pytest.mark.parametrize('query', [
-    "SELECT foo FROM bar ORDER BY `foo_config`.`name` ASC LIMIT 1",
-    "SELECT foo FROM bar ORDER BY foo ASC",
-    "SELECT foo FROM bar ORDER BY foo ASC LIMIT 1",
-    "SELECT foo FROM bar ORDER BY foo DESC",
-    "SELECT foo FROM bar ORDER BY foo",
-    "SELECT foo FROM bar"
+@pytest.mark.parametrize('query,direction', [
+    ("SELECT foo FROM bar ORDER BY `foo_config`.`foo` ASC LIMIT 1", 'ASC'),
+    ("SELECT foo FROM bar ORDER BY foo ASC", 'ASC'),
+    ("SELECT foo FROM bar ORDER BY foo ASC LIMIT 1", 'ASC'),
+    ("SELECT foo FROM bar ORDER BY foo DESC", 'DESC'),
+    ("SELECT foo FROM bar ORDER BY foo", 'ASC')
 ])
-def test_select_order(query, parser):
+def test_select_order(query, direction, parser):
     tree = parser.parse(query)
     assert tree.success
     assert tree.query_type == "SELECT"
@@ -798,3 +797,5 @@ def test_select_order(query, parser):
             'name': 'foo'
         }
     ]
+    assert tree.order['by'] == 'foo'
+    assert tree.order['direction'] == direction

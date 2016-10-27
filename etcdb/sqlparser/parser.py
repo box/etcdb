@@ -265,16 +265,31 @@ def p_select_statement(p):
         _parse_tree.limit = None
 
 
-def p_opt_ORDER_BY(p):
-    """opt_ORDER_BY :
-        | ORDER BY identifier opt_ORDER_DIRECTION
-        | ORDER BY identifier '.' identifier opt_ORDER_DIRECTION"""
+def p_opt_ORDER_BY_empty(p):
+    """opt_ORDER_BY : """
+
+
+def p_opt_ORDER_BY_simple(p):
+    """opt_ORDER_BY : ORDER BY identifier opt_ORDER_DIRECTION"""
+    _parse_tree.order['by'] = p[3]
+    _parse_tree.order['direction'] = p[4]
+
+
+def p_opt_ORDER_BY_extended(p):
+    """opt_ORDER_BY : ORDER BY identifier '.' identifier opt_ORDER_DIRECTION"""
+    _parse_tree.order['by'] = p[5]
+    _parse_tree.order['direction'] = p[6]
+
+
+def p_opt_ORDER_DIRECTION_empty(p):
+    """opt_ORDER_DIRECTION : """
+    p[0] = 'ASC'
 
 
 def p_opt_ORDER_DIRECTION(p):
-    """opt_ORDER_DIRECTION :
-        | ASC
+    """opt_ORDER_DIRECTION : ASC
         | DESC """
+    p[0] = p[1]
 
 
 def p_opt_LIMIT_empty(p):
