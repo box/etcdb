@@ -24,6 +24,11 @@ class ColInfo(object):
                                                             width=self.width)
 
 
+def eval_bool_primary(row, where):
+    op = where[0]
+    # if where['bool_primary'] ==
+
+
 class Cursor(object):
     """These objects represent a database cursor, which is used to manage the context of a fetch operation.
     Cursors created from the same connection are not isolated, i.e. , any changes done to the database
@@ -200,7 +205,11 @@ class Cursor(object):
 
             for pk in result_keys:
                 row = self.get_table_row(tree, pk)
-                rows += (row,)
+                if tree.where:
+                    if eval_bool_primary(row, tree.where):
+                        rows += (row,)
+                else:
+                    rows += (row,)
 
             if tree.order['by'] and tree.order['by'] in columns:
                 pos = columns.index(tree.order['by'])

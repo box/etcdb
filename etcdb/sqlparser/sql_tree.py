@@ -8,6 +8,7 @@ class SQLTree(object):
         self.table = None
         self.fields = {}
         self.options = {}
+        self.where = None
         self.limit = None
         self.order = {
             'by': None,

@@ -347,6 +347,7 @@ def p_opt_AS(p):
     """opt_AS :
         | AS identifier"""
 
+
 def p_select_one(p):
     """select_expr : '(' NUMBER ')'"""
 
