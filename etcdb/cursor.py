@@ -25,7 +25,8 @@ class ColInfo(object):
 
 
 def eval_bool_primary(row, where):
-    op = where[0]
+    pass
+    # op = where[0]
     # if where['bool_primary'] ==
 
 

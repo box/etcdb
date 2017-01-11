@@ -20,6 +20,7 @@ def _split_version(version):
     """
     return tuple(version.split('.'))
 
+
 version_info = _split_version(__version__)
 
 apilevel = "1.0"
