@@ -16,11 +16,12 @@ with open('README.rst') as readme_file:
 with open('HISTORY.rst') as history_file:
     history = history_file.read()
 
-requirements = [
-    'pyetcd', 'ply', 'click'
-]
+requirements = [str(ir.req) for ir in
+                parse_requirements('requirements.txt', session=False)]
 
-test_requirements = [str(ir.req) for ir in parse_requirements('requirements_dev.txt', session=False)]
+test_requirements = [str(ir.req) for ir in
+                     parse_requirements('requirements_dev.txt',
+                                        session=False)]
 
 setup(
     name='etcdb',

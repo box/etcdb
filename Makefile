@@ -26,6 +26,24 @@ BROWSER := python -c "$$BROWSER_PYSCRIPT"
 help:
 	@python -c "$$PRINT_HELP_PYSCRIPT" < $(MAKEFILE_LIST)
 
+.PHONY: rebuild-requirements
+rebuild-requirements: ## Rebuild requirements files requirements.txt and requirements_dev.txt
+	pip-compile --verbose --no-index --output-file requirements.txt requirements.in
+	pip-compile --verbose --no-index --output-file requirements_dev.txt requirements_dev.in
+
+.PHONY: upgrade-requirements
+upgrade-requirements: ## Upgrade requirements
+	pip-compile --upgrade --verbose --no-index --output-file requirements.txt requirements.in
+	pip-compile --upgrade --verbose --no-index --output-file requirements_dev.txt requirements_dev.in
+
+.PHONY: bootstrap
+bootstrap: ## bootstrap the development environment
+	pip install -U "setuptools==32.3.1"
+	pip install -U "pip==9.0.1"
+	pip install -U "pip-tools>=1.6.0"
+	pip-sync requirements.txt requirements_dev.txt
+	pip install --editable .
+
 clean: clean-build clean-pyc clean-test ## remove all build, test, coverage and Python artifacts
 
 
@@ -58,11 +76,7 @@ test-all: ## run tests on every Python version with tox
 	tox
 
 coverage: ## check code coverage quickly with the default Python
-	coverage run --source etcdb py.test
-
-		coverage report -m
-		coverage html
-		$(BROWSER) htmlcov/index.html
+	py.test --cov=etcdb --cov-report term-missing tests/unit
 
 docs: ## generate Sphinx HTML documentation, including API docs
 	rm -f docs/etcdb.rst
