@@ -121,7 +121,6 @@ def p_create_table_statement(p):
     """create_table_statement : CREATE TABLE identifier '(' create_definition_list ')'"""
     _parse_tree.query_type = "CREATE_TABLE"
     _parse_tree.table = p[3]
-    print('table = %s' % p[3])
 
 
 def p_create_database_statement(p):
@@ -260,23 +259,47 @@ def p_q_STRING(p):
 def p_select_statement(p):
     """select_statement : SELECT select_expr_list opt_FROM opt_WHERE opt_ORDER_BY opt_LIMIT"""
     _parse_tree.query_type = "SELECT"
+    try:
+        _parse_tree.limit = int(p[6])
+    except TypeError:
+        _parse_tree.limit = None
 
 
-def p_opt_ORDER_BY(p):
-    """opt_ORDER_BY :
-        | ORDER BY identifier opt_ORDER_DIRECTION
-        | ORDER BY identifier '.' identifier opt_ORDER_DIRECTION"""
+def p_opt_ORDER_BY_empty(p):
+    """opt_ORDER_BY : """
+
+
+def p_opt_ORDER_BY_simple(p):
+    """opt_ORDER_BY : ORDER BY identifier opt_ORDER_DIRECTION"""
+    _parse_tree.order['by'] = p[3]
+    _parse_tree.order['direction'] = p[4]
+
+
+def p_opt_ORDER_BY_extended(p):
+    """opt_ORDER_BY : ORDER BY identifier '.' identifier opt_ORDER_DIRECTION"""
+    _parse_tree.order['by'] = p[5]
+    _parse_tree.order['direction'] = p[6]
+
+
+def p_opt_ORDER_DIRECTION_empty(p):
+    """opt_ORDER_DIRECTION : """
+    p[0] = 'ASC'
 
 
 def p_opt_ORDER_DIRECTION(p):
-    """opt_ORDER_DIRECTION :
-        | ASC
+    """opt_ORDER_DIRECTION : ASC
         | DESC """
+    p[0] = p[1]
+
+
+def p_opt_LIMIT_empty(p):
+    """opt_LIMIT : """
+    p[0] = None
 
 
 def p_opt_LIMIT(p):
-    """opt_LIMIT :
-        | LIMIT NUMBER"""
+    """opt_LIMIT : LIMIT NUMBER"""
+    p[0] = p[2]
 
 
 def p_show_tables_statement(p):
@@ -323,6 +346,7 @@ def p_select_expr_list(p):
 def p_opt_AS(p):
     """opt_AS :
         | AS identifier"""
+
 
 def p_select_one(p):
     """select_expr : '(' NUMBER ')'"""

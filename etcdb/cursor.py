@@ -24,6 +24,12 @@ class ColInfo(object):
                                                             width=self.width)
 
 
+def eval_bool_primary(row, where):
+    pass
+    # op = where[0]
+    # if where['bool_primary'] ==
+
+
 class Cursor(object):
     """These objects represent a database cursor, which is used to manage the context of a fetch operation.
     Cursors created from the same connection are not isolated, i.e. , any changes done to the database
@@ -193,14 +199,34 @@ class Cursor(object):
                 if expression['type'] == 'variable':
                     variable_exists = True
 
-            result_keys = self._get_pks(db, tbl)
+            result_keys = self._get_pks(db, tbl, tree)
 
             if function_exists or variable_exists:
                 result_keys.append(None)
 
             for pk in result_keys:
                 row = self.get_table_row(tree, pk)
-                rows += (row,)
+                if tree.where:
+                    if eval_bool_primary(row, tree.where):
+                        rows += (row,)
+                else:
+                    rows += (row,)
+
+            if tree.order['by'] and tree.order['by'] in columns:
+                pos = columns.index(tree.order['by'])
+
+                def getKey(item):
+                    return item[pos]
+
+                reverse = False
+                if tree.order['direction'] == 'DESC':
+                    reverse = True
+
+                rows = sorted(rows, reverse=reverse, key=getKey)
+
+            if tree and tree.limit is not None:
+                rows = rows[:tree.limit]
+
             return columns, rows
         finally:
             self._release_read_lock(db, tbl, lock_id)
@@ -280,12 +306,13 @@ class Cursor(object):
     def _eval_function_version(self):
         return self.connection.client.version()
 
-    def _get_pks(self, db, table):
+    def _get_pks(self, db, table, tree=None):
         """
         Get list of primary key values for a given table
 
         :param db: database name
         :param table: table name
+        :param tree: instance of SQLTree
         :return: list of values or empty list if table is empty
         """
         if not table:
@@ -293,12 +320,21 @@ class Cursor(object):
         pks = []
         table_key = "/{db}/{tbl}".format(db=db, tbl=table)
         etcd_result = self.connection.client.read(table_key)
+        pk = self._get_pk(db, table)
+        pk_name = self._get_pk_name(db, table)
+        pk_type = pk[pk_name]['type']
         try:
-            for n in etcd_result.node['nodes']:
+            nodes = etcd_result.node['nodes']
+
+            for n in nodes:
                 pk_key = n['key']
                 pk = pk_key.replace(table_key + '/', '', 1)
-                if not pk.startswith('.'):
-                    pks.append(pk)
+                if pk_type in ['INT', 'INTEGER', 'SMALLINT', 'TINYINT']:
+                    pk = int(pk)
+                pks.append(pk)
+
+            pks = sorted(pks)
+
         except KeyError:
             pass
         return pks
@@ -406,14 +442,19 @@ class Cursor(object):
         value = etcd_result.node['value']
         return json.loads(value)
 
-    def _get_pk_name(self, db, tbl):
+    def _get_pk(self, db, tbl):
         for f, v in self._get_table_fields(db, tbl).iteritems():
             try:
                 if v['options']['primary']:
-                    return f
+                    return {
+                        f: v
+                    }
             except KeyError:
                 pass
         return None
+
+    def _get_pk_name(self, db, tbl):
+        return self._get_pk(db, tbl).keys()[0]
 
     def _execute_insert(self, tree):
         db = self._get_current_db(tree)

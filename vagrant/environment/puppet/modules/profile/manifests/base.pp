@@ -21,20 +21,12 @@ class profile::base {
         ensure => installed
     }
 
-    package { 'ius-release':
-        ensure => installed,
-        provider => rpm,
-        source => 'https://centos6.iuscommunity.org/ius-release.rpm'
-
-    }
-
-    $packages = ['vim-enhanced', 'python-pip', 'python27']
+    $packages = ['vim-enhanced', 'python-pip']
 
     package { $packages:
         ensure => installed,
         require => [
-            Package['epel-release'],
-            Package['ius-release']
+            Package['epel-release']
         ]
     }
 

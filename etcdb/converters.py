@@ -26,6 +26,7 @@ def Thing2Str(s, d):
     """Convert something into a string via str()."""
     return str(s)
 
+
 Long2Int = Thing2Str
 
 

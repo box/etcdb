@@ -3,7 +3,6 @@ import json
 import etcdb
 import pytest
 import requests
-import time
 
 
 @pytest.fixture
@@ -29,5 +28,18 @@ def test_select_version(cursor):
 
 
 def test_get_meta_lock(cursor):
-    print(cursor._get_meta_lock('foo', 'bar'))
-    print(cursor._release_meta_lock('foo', 'bar'))
+    #print(cursor._get_meta_lock('foo', 'bar'))
+    #print(cursor._release_meta_lock('foo', 'bar'))
+    pass
+
+
+def test_select_limit(cursor):
+    cursor.execute('CREATE TABLE t1(id INT NOT NULL PRIMARY KEY AUTO_INCREMENT, name VARCHAR(255))')
+    cursor.execute("INSERT INTO t1(name) VALUES ('aaa')")
+    cursor.execute("INSERT INTO t1(name) VALUES ('bbb')")
+    cursor.execute("INSERT INTO t1(name) VALUES ('ccc')")
+    cursor.execute("SELECT id, name FROM t1 LIMIT 2")
+    assert cursor.fetchall() == (
+        ('1', 'aaa'),
+        ('2', 'bbb'),
+    )

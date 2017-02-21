@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 import os
 
+from pip.req import parse_requirements
 from setuptools import setup, find_packages
 
 # This is to workaround error: Operation not permitted
@@ -19,9 +20,7 @@ requirements = [
     'pyetcd', 'ply', 'click'
 ]
 
-test_requirements = [
-    # TODO: put package test requirements here
-]
+test_requirements = [str(ir.req) for ir in parse_requirements('requirements_dev.txt', session=False)]
 
 setup(
     name='etcdb',
