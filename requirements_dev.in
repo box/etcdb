@@ -1,7 +1,7 @@
 bumpversion
-flake8
+pylint
 tox
-coverage
 pytest
 mock
 pytest-cov
+Sphinx

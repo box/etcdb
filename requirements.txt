@@ -5,6 +5,7 @@
 #    pip-compile --no-index --output-file requirements.txt requirements.in
 #
 click==6.7
+enum34==1.1.6
 ply==3.10
 pyetcd==1.6.1
 requests==2.13.0          # via pyetcd
