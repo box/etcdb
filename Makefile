@@ -65,11 +65,14 @@ clean-test: ## remove test and coverage artifacts
 	rm -f .coverage
 	rm -fr htmlcov/
 
-lint: ## check style with flake8
-	flake8 etcdb tests
+lint: ## check style with pylint
+	pylint etcdb
 
 test: ## run tests quickly with the default Python
 	py.test -v tests/unit
+
+test-functional: ## run functional tests. Vagrant machines must run.
+	py.test -v tests/functional
 
 
 test-all: ## run tests on every Python version with tox

@@ -1,8 +1,10 @@
 # -*- coding: utf-8 -*-
+"""Connection class definition"""
 import inspect
 
 from pyetcd.client import Client
 
+# from etcdb import NotSupportedError
 from etcdb import NotSupportedError
 from etcdb.converters import conversions
 from etcdb.cursor import Cursor
@@ -24,15 +26,18 @@ class Connection(object):
         self._timeout = timeout
         self._cursor = Cursor(self)
 
-    def close(self):
+    @staticmethod
+    def close():
         """Close the connection now (rather than whenever .__del__() is called). """
         pass
 
-    def commit(self):
+    @staticmethod
+    def commit():
         """Commit any pending transaction to the database."""
         raise NotSupportedError('Transactions are not supported by etcd')
 
-    def rollback(self):
+    @staticmethod
+    def rollback():
         """This method is optional since not all databases provide transaction support."""
         raise NotSupportedError('Transactions are not supported by etcd')
 
@@ -40,17 +45,19 @@ class Connection(object):
         """Return a new Cursor Object using the connection."""
         return self._cursor
 
-    def autocommit(self, autocommit):
+    @staticmethod
+    def autocommit(autocommit):
+        """Set autocommit mode. Does nothing for non-transactional etcd"""
         pass
 
     @staticmethod
     def _santize_pyetcd_kwargs(kwargs, allowed_kwargs):
         """
-        Strips out keyword arguments that aren't listed in allowed_kwargs
+        Strips out keyword arguments that aren't listed in allowed_kwargs.
 
-        :param kwargs: input dictionary with keyword arguments
-        :param allowed_kwargs: list of allowed keyword arguments
-        :return: dictionary without non-allowed keys
+        :param kwargs: input dictionary with keyword arguments.
+        :param allowed_kwargs: list of allowed keyword arguments.
+        :return: dictionary without non-allowed keys.
         """
         args = {}
         for arg in kwargs:
@@ -60,13 +67,15 @@ class Connection(object):
 
     @property
     def db(self):
+        """Current database."""
         return self._db
 
     @property
     def timeout(self):
+        """Connection timeout."""
         return self._timeout
 
 
-def Connect(**kwargs):
+def Connect(**kwargs):  # pylint: disable=invalid-name
     """Factory function for Connection."""
     return Connection(**kwargs)

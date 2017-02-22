@@ -2,7 +2,7 @@ class profile::etcdnode {
     include profile::base
 
     package { ['etcd']:
-        ensure => latest
+        ensure => '2.3.7-4.el7'
     }
 
     service { 'etcd':
