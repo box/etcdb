@@ -100,10 +100,7 @@ class Cursor(object):
         """Prepare and execute a database operation (query or command)."""
 
         if args:
-            # print("args = %r" % args)
-            query = query % tuple(["'%s'" % a for a in args])
-
-        print("query = %s" % query)
+            query %= tuple(["'%s'" % a for a in args])
 
         self._rows = ()
 
@@ -132,6 +129,8 @@ class Cursor(object):
             self._execute_insert(tree)
         elif tree.query_type == "UPDATE":
             return self._execute_update(tree)
+        elif tree.query_type == "WAIT":
+            self._column_names, self._rows = self._execute_wait(tree)
 
         self._col_infos = self._update_columns(self._column_names, self._rows)
         return len(self._rows)
@@ -226,7 +225,6 @@ class Cursor(object):
 
             if tree and tree.limit is not None:
                 rows = rows[:tree.limit]
-
             return columns, rows
         finally:
             self._release_read_lock(db, tbl, lock_id)
@@ -767,3 +765,26 @@ class Cursor(object):
             return int(len(etcd_result.node['nodes']))
         except KeyError:
             return 0
+
+    def _execute_wait(self, tree):
+
+        pk = tree.expressions[0]['args'][0]
+        print('pk = %s' % pk)
+
+        key = "/{db}/{tbl}/{pk}".format(db=self._get_current_db(tree),
+                                        tbl=tree.table,
+                                        pk=pk)
+        etcd_response = self.connection.client.read(key, wait=True)
+        full_row = json.loads(etcd_response.node['value'])
+
+        columns = ()
+        for col in full_row.keys():
+            columns += (col, )
+
+        row = ()
+        for col in columns:
+            row += (full_row[col], )
+
+        rows = (row, )
+
+        return columns, rows

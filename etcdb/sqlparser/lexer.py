@@ -9,7 +9,8 @@ reserved = [
     'USE', 'INT', 'FROM', 'COMMIT', 'WHERE', 'OR', 'AND', 'IS', 'SET', 'AUTOCOMMIT',
     'LONGTEXT', 'SMALLINT', 'UNSIGNED', 'BOOL', 'TINYINT', 'UNIQUE', 'NAMES',
     'INSERT', 'INTO', 'VALUES', 'DROP', 'LIMIT', 'AS', 'UPDATE', 'COUNT',
-    'ORDER', 'BY', 'ASC', 'DESC'
+    'ORDER', 'BY', 'ASC', 'DESC',
+    'WAIT'
 ]
 
 tokens = ['NUMBER', 'STRING', 'STRING_VALUE',

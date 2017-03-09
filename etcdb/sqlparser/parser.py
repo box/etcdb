@@ -20,8 +20,22 @@ def p_statement(p):
         | insert_statement
         | drop_database_statement
         | desc_table_statement
-        | update_table_statement"""
+        | update_table_statement
+        | wait_statement"""
     _parse_tree.success = True
+
+
+def p_wait_statement(p):
+    """wait_statement : WAIT '(' arg ')' FROM identifier"""
+    _parse_tree.query_type = "WAIT"
+    _parse_tree.table = p[6]
+    _parse_tree.expressions = [
+        {
+            'type': 'function',
+            'name': 'WAIT',
+            'args': [p[3]]
+        }
+    ]
 
 
 def p_update_table_statement(p):
@@ -354,10 +368,13 @@ def p_select_one(p):
 
 def p_select_expr_func(p):
     """select_expr : function '(' arglist ')'"""
-    _parse_tree.expressions.append({
+    func_def = {
         'type': 'function',
         'name': p[1].upper()
-    })
+    }
+    if p[3]:
+        func_def['args'] = p[3]
+    _parse_tree.expressions.append(func_def)
 
 
 def p_select_expr_field(p):
@@ -385,10 +402,19 @@ def p_select_expr_variable(p):
     })
 
 
-def p_arglist(p):
-    """arglist :
-        | arg
-        | arg ',' arglist"""
+def p_arglist_empty(p):
+    """arglist : """
+    p[0] = []
+
+
+def p_arglist_one(p):
+    """arglist : arg"""
+    p[0] = [p[1]]
+
+
+def p_arglist_many(p):
+    """arglist : arg ',' arglist"""
+    p[0] = p[3].append[p[1]]
 
 
 def p_function(p):
@@ -399,10 +425,12 @@ def p_function(p):
 
 def p_agr(p):
     """arg : STRING"""
+    p[0] = p[1]
 
 
 def p_agr_star(p):
     """arg : '*'"""
+    p[0] = '*'
 
 
 def p_opt_WHERE_empty(p):
