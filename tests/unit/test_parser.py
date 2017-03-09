@@ -1,12 +1,6 @@
 from pprint import pprint
 
 import pytest
-from etcdb.sqlparser.parser import SQLParser
-
-
-@pytest.fixture
-def parser():
-    return SQLParser()
 
 
 def test_select_version(parser):
@@ -773,7 +767,8 @@ def test_select_count_star(parser):
     assert tree.expressions == [
         {
             'type': 'function',
-            'name': 'COUNT'
+            'name': 'COUNT',
+            'args': ['*']
         }
     ]
 
@@ -799,3 +794,16 @@ def test_select_order(query, direction, parser):
     ]
     assert tree.order['by'] == 'foo'
     assert tree.order['direction'] == direction
+
+
+def test_select_wait(parser):
+    tree = parser.parse("wait(foo) from bar")
+    assert tree.query_type == "WAIT"
+    assert tree.table == 'bar'
+    assert tree.expressions == [
+        {
+            'type': 'function',
+            'name': 'WAIT',
+            'args': ['foo']
+        }
+    ]

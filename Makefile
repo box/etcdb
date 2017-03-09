@@ -69,7 +69,7 @@ lint: ## check style with pylint
 	pylint etcdb
 
 test: ## run tests quickly with the default Python
-	py.test -v tests/unit
+	py.test -xv tests/unit
 
 test-functional: ## run functional tests. Vagrant machines must run.
 	py.test -v tests/functional
