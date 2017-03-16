@@ -21,7 +21,7 @@ class profile::base {
         ensure => installed
     }
 
-    $packages = ['vim-enhanced', 'python-pip']
+    $packages = ['vim-enhanced', 'python2-pip']
 
     package { $packages:
         ensure => installed,
@@ -33,14 +33,14 @@ class profile::base {
     file { '/usr/bin/pip-python':
         ensure => 'link',
         target => '/usr/bin/pip',
-        require => Package['python-pip']
+        require => Package['python2-pip']
     }
 
     package { ['tox']:
         ensure => installed,
         provider => pip,
         require => [
-            Package['python-pip'],
+            Package['python2-pip'],
             File['/usr/bin/pip-python']
         ]
     }

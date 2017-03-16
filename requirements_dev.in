@@ -1,0 +1,7 @@
+bumpversion
+pylint
+tox
+pytest
+mock
+pytest-cov
+Sphinx

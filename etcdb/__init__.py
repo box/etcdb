@@ -1,5 +1,14 @@
 # -*- coding: utf-8 -*-
+"""
+PEP-249 implementation for etcd
+"""
 import time
+
+from enum import Enum
+
+from .exception import (Error, Warning, InterfaceError, DatabaseError, DataError,  # pylint: disable=redefined-builtin
+                        OperationalError, IntegrityError, InternalError,
+                        ProgrammingError, NotSupportedError)
 
 from .etcddate import EtcdDate
 from .etcdstring import EtcdString
@@ -8,7 +17,7 @@ from .etcdtimestamp import EtcdTimestamp
 
 __author__ = 'Box TechOps Database Team'
 __email__ = 'oss@box.com'
-__version__ = '1.0.3'
+__version__ = '1.1.0'
 
 
 def _split_version(version):
@@ -21,75 +30,23 @@ def _split_version(version):
     return tuple(version.split('.'))
 
 
-version_info = _split_version(__version__)
+VERSION_INFO = _split_version(__version__)
 
-apilevel = "1.0"
+apilevel = "1.0"  # pylint: disable=invalid-name
 """supported DB API level."""
-threadsafety = 3
-"""the level of thread safety. Threads may share the module, connections and cursors."""
-paramstyle = "qmark"
-"""the type of parameter marker formatting. Question mark style, e.g. ...WHERE name=?."""
+threadsafety = 3  # pylint: disable=invalid-name
+"""the level of thread safety. Threads may share the module,
+connections and cursors."""
+paramstyle = "qmark"  # pylint: disable=invalid-name
+"""the type of parameter marker formatting.
+Question mark style, e.g. ...WHERE name=?."""
 
 NULL = None
 LOCK_WAIT_TIMEOUT = 50
+ETCDTABLELOCK = Enum('EtcdTableLock', 'read write')
 
 
-def enum(**enums):
-    return type('Enum', (), enums)
-
-
-EtcdTableLock = enum(read='read', write='write')
-
-# Exceptions
-
-
-class Error(StandardError):
-    """Exception that is the base class of all other error exceptions."""
-
-
-class Warning(StandardError):
-    """Exception raised for important warnings like data truncations while inserting, etc."""
-
-
-class InterfaceError(Error):
-    """Exception raised for errors that are related to the database interface rather than the database itself."""
-
-
-class DatabaseError(Error):
-    """Exception raised for errors that are related to the database."""
-
-
-class DataError(DatabaseError):
-    """Exception raised for errors that are due to problems with the processed data like division by zero,
-    numeric value out of range, etc."""
-
-
-class OperationalError(DatabaseError):
-    """Exception raised for errors that are related to the database's operation and not necessarily
-    under the control of the programmer, e.g. an unexpected disconnect occurs, the data source name is not found,
-    a transaction could not be processed, a memory allocation error occurred during processing, etc."""
-
-
-class IntegrityError(DatabaseError):
-    """Exception raised when the relational integrity of the database is affected, e.g. a foreign key check fails."""
-
-
-class InternalError(DatabaseError):
-    """Exception raised when the database encounters an internal error, e.g. the cursor is not valid anymore,
-    the transaction is out of sync, etc. """
-
-
-class ProgrammingError(DatabaseError):
-    """Exception raised for programming errors, e.g. table not found or already exists, syntax error
-    in the SQL statement, wrong number of parameters specified, etc."""
-
-
-class NotSupportedError(DatabaseError):
-    """Exception raised in case a method or database API was used which is not supported by the database,
-    e.g. requesting a .rollback() on a connection that does not support transaction or has transactions turned off."""
-
-
-def Timestamp(year, month, day, hour, minute, second):
+def Timestamp(year, month, day, hour, minute, second):  # pylint: disable=invalid-name,too-many-arguments
     """
     This function constructs an object holding a time stamp value.
 
@@ -104,7 +61,7 @@ def Timestamp(year, month, day, hour, minute, second):
     return EtcdTimestamp(year, month, day, hour, minute, second)
 
 
-def DateFromTicks(ticks):
+def DateFromTicks(ticks):  # pylint: disable=invalid-name
     """
     This function constructs an object holding a time value from the given ticks value
     (number of seconds since the epoch; see the documentation of the standard Python time module for details).
@@ -115,7 +72,7 @@ def DateFromTicks(ticks):
     return EtcdDate(*time.localtime(ticks)[:3])
 
 
-def TimeFromTicks(ticks):
+def TimeFromTicks(ticks):  # pylint: disable=invalid-name
     """
     This function constructs an object holding a time value from the given ticks value
     (number of seconds since the epoch; see the documentation of the standard Python time module for details).
@@ -126,7 +83,7 @@ def TimeFromTicks(ticks):
     return EtcdTime(*time.localtime(ticks)[3:6])
 
 
-def TimestampFromTicks(ticks):
+def TimestampFromTicks(ticks):  # pylint: disable=invalid-name
     """This function constructs an object holding a time stamp value from the given ticks value
      (number of seconds since the epoch; see the documentation of the standard Python time module for details).
 
@@ -136,7 +93,7 @@ def TimestampFromTicks(ticks):
     return EtcdTimestamp(*time.localtime(ticks)[:6])
 
 
-def Date(year, month, day):
+def Date(year, month, day):  # pylint: disable=invalid-name
     """
     This function constructs an object holding a date value.
 
@@ -148,7 +105,7 @@ def Date(year, month, day):
     return EtcdDate(year, month, day)
 
 
-def Time(hour, minute, second):
+def Time(hour, minute, second):  # pylint: disable=invalid-name
     """
     This function constructs an object holding a time value.
 
@@ -160,10 +117,9 @@ def Time(hour, minute, second):
     return EtcdTime(hour, minute, second)
 
 
-def Binary(string):
+def Binary(string):  # pylint: disable=invalid-name
     """This function constructs an object capable of holding a binary (long) string value. """
     return EtcdString(string)
 
-
-from .connection import Connect
-connect = Connect
+from .connection import Connect  # pylint: disable=wrong-import-position
+connect = Connect  # pylint: disable=invalid-name
