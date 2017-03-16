@@ -17,7 +17,7 @@ from .etcdtimestamp import EtcdTimestamp
 
 __author__ = 'Box TechOps Database Team'
 __email__ = 'oss@box.com'
-__version__ = '1.0.3'
+__version__ = '1.1.0'
 
 
 def _split_version(version):

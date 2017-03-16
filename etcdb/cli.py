@@ -8,6 +8,8 @@ import sys
 import time
 
 import click
+import pyetcd
+
 import etcdb
 
 
@@ -33,15 +35,13 @@ def get_query(prompt):
 
 
 @click.command()
-@click.option('--host', help='Host to connect to etcd node', default='127.0.0.1', show_default=True)
+@click.option('-h', '--host', help='Host to connect to etcd node', default='127.0.0.1', show_default=True)
 def main(host):
     """
     Read and execute user input.
-
-    :param host: Hostname to connect.
-    :type host: str
-    :return: None
     """
+    print('Etcdb version %s, pyetcd version %s' % (etcdb.__version__,
+                                                   pyetcd.__version__))
     prompt = 'etcd@%s> ' % host
     connection = etcdb.connect(host=host)
     cursor = connection.cursor()
@@ -53,7 +53,7 @@ def main(host):
             start_time = time.time()
             cursor.execute(query)
             _print_table(cursor, time.time() - start_time)
-        except etcdb.Error as err:
+        except (etcdb.Error, pyetcd.EtcdException) as err:
             print(err)
         except KeyboardInterrupt:
             print('Query is interrupted')

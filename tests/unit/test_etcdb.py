@@ -19,11 +19,6 @@ from etcdb.etcdtimestamp import EtcdTimestamp
 from etcdb.sqlparser.sql_tree import SQLTree
 
 
-@pytest.fixture
-def t_2016_9_21_23_10_3():
-    return 1474499403.0
-
-
 def test_EtcdDate():
     d = EtcdDate(2016, 9, 11)
     assert d.year == 2016
@@ -107,16 +102,6 @@ def test_TimestampFromTicks(t_2016_9_21_23_10_3):
 def test_Binary():
     s = Binary('foo')
     assert isinstance(s, EtcdString)
-
-
-@pytest.fixture
-def etcdb_connection():
-    return Connection(db='foo')
-
-
-@pytest.fixture
-def cursor(etcdb_connection):
-    return etcdb_connection.cursor()
 
 
 def test_connection(etcdb_connection):
