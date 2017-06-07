@@ -8,6 +8,7 @@ from multiprocessing import active_children
 from pyetcd import EtcdNodeExist, EtcdKeyNotFound
 
 from etcdb import ProgrammingError, OperationalError, LOCK_WAIT_TIMEOUT
+from etcdb.eval_expr import eval_expr
 from etcdb.sqlparser.parser import SQLParser, SQLParserError
 
 
@@ -22,12 +23,6 @@ class ColInfo(object):
     def __repr__(self):
         return "ColInfo: name={name}, width={width}".format(name=self.name,
                                                             width=self.width)
-
-
-def eval_bool_primary(row, where):
-    pass
-    # op = where[0]
-    # if where['bool_primary'] ==
 
 
 class Cursor(object):
@@ -206,7 +201,7 @@ class Cursor(object):
             for pk in result_keys:
                 row = self.get_table_row(tree, pk)
                 if tree.where:
-                    if eval_bool_primary(row, tree.where):
+                    if eval_expr((columns, row), tree.where):
                         rows += (row,)
                 else:
                     rows += (row,)
@@ -356,7 +351,6 @@ class Cursor(object):
                 if e['type'] == 'variable':
                     field = self._eval_variable(e['name'])
                 if e['type'] == 'field':
-                    # print(e['name'])
                     try:
                         field = full_row[field_name]
                     except KeyError:
@@ -769,7 +763,6 @@ class Cursor(object):
     def _execute_wait(self, tree):
 
         pk = tree.expressions[0]['args'][0]
-        print('pk = %s' % pk)
 
         key = "/{db}/{tbl}/{pk}".format(db=self._get_current_db(tree),
                                         tbl=tree.table,

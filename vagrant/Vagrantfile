@@ -1,21 +1,9 @@
 # -*- mode: ruby -*-
 # vi: set ft=ruby :
 nodes = [
-    { :hostname   => 'client',
-      :ip         => '10.0.1.9',
-      :box        => 'bento/centos-7.1',
-    },
     { :hostname   => 'infra0',
       :ip         => '10.0.1.10',
-      :box        => 'bento/centos-7.1',
-    },
-    { :hostname   => 'infra1',
-      :ip         => '10.0.1.11',
-      :box        => 'bento/centos-7.1',
-    },
-    { :hostname   => 'infra2',
-      :ip         => '10.0.1.12',
-      :box        => 'bento/centos-7.1',
+      :box        => 'bento/centos-7.3',
     }
 ]
 
