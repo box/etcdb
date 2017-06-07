@@ -43,3 +43,40 @@ def test_select_limit(cursor):
         ('1', 'aaa'),
         ('2', 'bbb'),
     )
+
+
+def test_select_where(cursor):
+    cursor.execute("""
+    CREATE TABLE `auth_user` (
+  `id` int NOT NULL AUTO_INCREMENT PRIMARY KEY,
+  `password` varchar(128) NOT NULL,
+  `last_login` datetime(6),
+  `is_superuser` tinyint NOT NULL,
+  `username` varchar(150) NOT NULL,
+  `first_name` varchar(30) NOT NULL,
+  `last_name` varchar(30) NOT NULL,
+  `email` varchar(254) NOT NULL,
+  `is_staff` tinyint NOT NULL,
+  `is_active` tinyint NOT NULL,
+  `date_joined` datetime(6) NOT NULL
+)""")
+    cursor.execute('SHOW TABLES')
+    assert cursor.fetchone() == ('auth_user',)
+    cursor.execute("INSERT INTO `auth_user` (`password`, `last_login`, "
+                   "`is_superuser`, `username`, `first_name`, `last_name`, "
+                   "`email`, `is_staff`, `is_active`, `date_joined`) "
+                   "VALUES ('=', 'None', "
+                   "'True', 'root1', 'a', 'b', "
+                   "'a@a.com', 'True', 'True', '2017-06-06 20:33:38')")
+    cursor.execute("INSERT INTO `auth_user` (`password`, `last_login`, "
+                   "`is_superuser`, `username`, `first_name`, `last_name`, "
+                   "`email`, `is_staff`, `is_active`, `date_joined`) "
+                   "VALUES ('=', 'None', "
+                   "'True', 'root2', 'a', 'b', "
+                   "'a@a.com', 'True', 'True', '2017-06-06 20:33:38')")
+    cursor.execute('SELECT id, username FROM auth_user')
+    assert cursor.fetchone() == ('1', 'root1')
+    assert cursor.fetchone() == ('2', 'root2')
+
+    cursor.execute("SELECT id, username FROM auth_user WHERE username = 'root1'")
+    assert cursor.fetchone() == ('1', 'root1')

@@ -1308,4 +1308,3 @@ def test_get_pks_with_limit(mock_get_pk, mock_read, payload, limit, result, curs
         }
     }
     assert cursor._get_pks('foo', 'bar', tree=tree) == result
-

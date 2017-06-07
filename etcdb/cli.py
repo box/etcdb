@@ -35,11 +35,18 @@ def get_query(prompt):
 
 
 @click.command()
-@click.option('-h', '--host', help='Host to connect to etcd node', default='127.0.0.1', show_default=True)
-def main(host):
+@click.option('-h', '--host', help='Host to connect to etcd node',
+              default='127.0.0.1', show_default=True)
+@click.option('-v', '--version', help='Show tool version and exit.',
+              is_flag=True,
+              default=False)
+def main(host, version):
     """
     Read and execute user input.
     """
+    if version:
+        print(etcdb.__version__)
+        exit(0)
     print('Etcdb version %s, pyetcd version %s' % (etcdb.__version__,
                                                    pyetcd.__version__))
     prompt = 'etcd@%s> ' % host

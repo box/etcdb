@@ -529,7 +529,10 @@ def test_select_from_db_tbl(parser):
                 'name': 'f2'
             }
         ],
-        ('bool_primary', ('=', ('IDENTIFIER', 'f1'), ('STRING', 'foo')))
+        ('bool_primary',
+         ('=',
+          ('predicate', ('bit_expr', ('simple_expr', ('IDENTIFIER', 'f1')))),
+          ('bit_expr', ('simple_expr', ('STRING', 'foo')))))
     ),
     (
         """
@@ -555,11 +558,15 @@ def test_select_from_db_tbl(parser):
                 'name': 'model'
             }
         ],
-        (
-            'AND',
-            ('bool_primary', ('=', ('IDENTIFIER', 'model'), ('STRING', 'logentry'))),
-            ('bool_primary', ('=', ('IDENTIFIER', 'app_label'), ('STRING', 'admin')))
-        )
+        ('AND',
+         ('bool_primary',
+          ('=',
+           ('predicate', ('bit_expr', ('simple_expr', ('IDENTIFIER', 'model')))),
+           ('bit_expr', ('simple_expr', ('STRING', 'logentry'))))),
+         ('bool_primary',
+          ('=',
+           ('predicate', ('bit_expr', ('simple_expr', ('IDENTIFIER', 'app_label')))),
+           ('bit_expr', ('simple_expr', ('STRING', 'admin'))))))
     ),
     (
         """
@@ -588,11 +595,19 @@ def test_select_from_db_tbl(parser):
                 'table_name': 'django_content_type'
             }
         ],
-        (
-            'AND',
-            ('bool_primary', ('=', ('IDENTIFIER', 'django_content_type.model'), ('STRING', 'logentry'))),
-            ('bool_primary', ('=', ('IDENTIFIER', 'django_content_type.app_label'), ('STRING', 'admin')))
-        )
+        ('AND',
+         ('bool_primary',
+          ('=',
+           ('predicate',
+            ('bit_expr',
+             ('simple_expr', ('IDENTIFIER', 'django_content_type.model')))),
+           ('bit_expr', ('simple_expr', ('STRING', 'logentry'))))),
+         ('bool_primary',
+          ('=',
+           ('predicate',
+            ('bit_expr',
+             ('simple_expr', ('IDENTIFIER', 'django_content_type.app_label')))),
+           ('bit_expr', ('simple_expr', ('STRING', 'admin'))))))
     )
 ])
 def test_select_from_tbl_where(parser, query, table, expressions, where):
@@ -807,3 +822,15 @@ def test_select_wait(parser):
             'args': ['foo']
         }
     ]
+
+
+def test_insert_with_empty_values(parser):
+    tree = parser.parse("insert into foo(id, name) values(1, '')")
+    assert tree.query_type == "INSERT"
+    assert tree.table == 'foo'
+    # pprint(tree)
+    # 1/0
+    assert tree.fields == {
+        'id': '1',
+        'name': ''
+    }

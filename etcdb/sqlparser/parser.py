@@ -270,6 +270,11 @@ def p_q_STRING(p):
     p[0] = p[2]
 
 
+def p_q_STRING_EMPTY(p):
+    """q_STRING :  """
+    p[0] = ""
+
+
 def p_select_statement(p):
     """select_statement : SELECT select_expr_list opt_FROM opt_WHERE opt_ORDER_BY opt_LIMIT"""
     _parse_tree.query_type = "SELECT"
@@ -474,7 +479,7 @@ def p_boolean_primary_comparison(p):
 
 def p_boolean_primary_predicate(p):
     """boolean_primary : predicate"""
-    p[0] = p[1]
+    p[0] = ('predicate', p[1])
 
 
 def p_comparison_operator(p):
@@ -489,12 +494,12 @@ def p_comparison_operator(p):
 
 def p_predicate(p):
     """predicate : bit_expr """
-    p[0] = p[1]
+    p[0] = ('bit_expr', p[1])
 
 
 def p_bit_expr(p):
     """bit_expr : simple_expr"""
-    p[0] = p[1]
+    p[0] = ('simple_expr', p[1])
 
 
 def p_simple_expr_identifier(p):
@@ -514,7 +519,7 @@ def p_simple_expr_string(p):
 
 def p_simple_expr_parent(p):
     """simple_expr : '(' expr ')'"""
-    p[0] = p[2]
+    p[0] = ('expr', p[2])
 
 
 def p_error(t):
