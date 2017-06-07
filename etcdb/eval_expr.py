@@ -4,6 +4,7 @@ a WHERE statement.
 Grammar of expression is described on MySQL website
 (https://dev.mysql.com/doc/refman/5.7/en/expressions.html).
 """
+from etcdb import OperationalError
 from etcdb.sqlparser.parser import SQLParserError
 
 
@@ -19,8 +20,16 @@ def eval_identifier(row, identifier):
     """
     fields = row[0]
     data = row[1]
-    pos = fields.index(identifier)
-    return data[pos]
+    try:
+        identifier_strip = identifier.split('.')[1]
+    except IndexError:
+        identifier_strip = identifier
+
+    try:
+        pos = fields.index(identifier_strip)
+        return data[pos]
+    except ValueError:
+        raise OperationalError('Unknown identifier %s', identifier_strip)
 
 
 def eval_string(value):

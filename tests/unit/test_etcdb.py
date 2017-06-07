@@ -16,6 +16,7 @@ from etcdb.etcddate import EtcdDate
 from etcdb.etcdstring import EtcdString
 from etcdb.etcdtime import EtcdTime
 from etcdb.etcdtimestamp import EtcdTimestamp
+from etcdb.eval_expr import eval_identifier
 from etcdb.sqlparser.sql_tree import SQLTree
 
 
@@ -1308,3 +1309,29 @@ def test_get_pks_with_limit(mock_get_pk, mock_read, payload, limit, result, curs
         }
     }
     assert cursor._get_pks('foo', 'bar', tree=tree) == result
+
+
+@pytest.mark.parametrize('row, identifier, result', [
+    (
+        (('id', 'password', 'last_login', 'is_superuser', 'username', 'first_name', 'last_name', 'email', 'is_staff', 'is_active', 'date_joined'), (u'12', u'pbkdf2_sha256$30000$fqLqGc9NDUIg$4E4Y0wOAcIVWj0zNB2xlsXbuyQ3vZi4hdQ2NqKeWqjY=', u'None', u'True', u'root', u'a', u'b', u'a@a.com', u'True', u'True', u'2017-06-06 20:33:38')),
+        'auth_user.username',
+        'root'
+    ),
+    (
+        (('id', 'username', ), (u'12', u'foo')),
+        'username',
+        'foo'
+    )
+])
+def test_eval_identifier(row, identifier, result):
+    assert eval_identifier(row, identifier) == result
+
+
+def test_eval_identifier_raises():
+    with pytest.raises(OperationalError):
+        eval_identifier(
+            (
+                ('id', 'username', ),
+                (u'12', u'foo')
+            ),
+            'aaa')
