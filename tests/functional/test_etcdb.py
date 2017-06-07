@@ -59,8 +59,7 @@ def test_select_where(cursor):
   `is_staff` tinyint NOT NULL,
   `is_active` tinyint NOT NULL,
   `date_joined` datetime(6) NOT NULL
-) ;
-""")
+)""")
     cursor.execute('SHOW TABLES')
     assert cursor.fetchone() == ('auth_user',)
     cursor.execute("INSERT INTO `auth_user` (`password`, `last_login`, "
