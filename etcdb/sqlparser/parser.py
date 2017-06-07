@@ -270,6 +270,11 @@ def p_q_STRING(p):
     p[0] = p[2]
 
 
+def p_q_STRING_EMPTY(p):
+    """q_STRING :  """
+    p[0] = ""
+
+
 def p_select_statement(p):
     """select_statement : SELECT select_expr_list opt_FROM opt_WHERE opt_ORDER_BY opt_LIMIT"""
     _parse_tree.query_type = "SELECT"

@@ -807,3 +807,15 @@ def test_select_wait(parser):
             'args': ['foo']
         }
     ]
+
+
+def test_insert_with_empty_values(parser):
+    tree = parser.parse("insert into foo(id, name) values(1, '')")
+    assert tree.query_type == "INSERT"
+    assert tree.table == 'foo'
+    # pprint(tree)
+    # 1/0
+    assert tree.fields == {
+        'id': '1',
+        'name': ''
+    }
