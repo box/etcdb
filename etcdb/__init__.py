@@ -6,7 +6,8 @@ import time
 
 from enum import Enum
 
-from .exception import (Error, Warning, InterfaceError, DatabaseError, DataError,  # pylint: disable=redefined-builtin
+from .exception import (Error, Warning, InterfaceError, DatabaseError,
+                        DataError,  # pylint: disable=redefined-builtin
                         OperationalError, IntegrityError, InternalError,
                         ProgrammingError, NotSupportedError)
 
@@ -118,7 +119,8 @@ def Time(hour, minute, second):  # pylint: disable=invalid-name
 
 
 def Binary(string):  # pylint: disable=invalid-name
-    """This function constructs an object capable of holding a binary (long) string value. """
+    """This function constructs an object capable of holding
+    a binary (long) string value. """
     return EtcdString(string)
 
 from .connection import Connect  # pylint: disable=wrong-import-position

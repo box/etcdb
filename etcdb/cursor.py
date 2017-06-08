@@ -9,6 +9,7 @@ from pyetcd import EtcdNodeExist, EtcdKeyNotFound
 
 from etcdb import ProgrammingError, OperationalError, LOCK_WAIT_TIMEOUT
 from etcdb.eval_expr import eval_expr
+from etcdb.execute.dml.show import show_tables, show_databases
 from etcdb.sqlparser.parser import SQLParser, SQLParserError
 
 
@@ -48,7 +49,10 @@ class Cursor(object):
     The first two items ( name and type_code ) are mandatory, the other five are optional and are set to None
     if no meaningful values can be provided. """
 
-    rowcount = 0
+    @property
+    def rowcount(self):
+        return self._result_set.n_rows
+
     """This read-only attribute specifies the number of rows that the last .execute*() produced
     (for DQL statements like SELECT ) or affected (for DML statements like UPDATE or INSERT )."""
 
@@ -61,11 +65,7 @@ class Cursor(object):
 
     # ColInfo = ColInfo
 
-    _rows = ()
-    _column_names = ()
-    _sql_parser = None
-
-    _col_infos = ()
+    _result_set = None
 
     def __init__(self, connection):
         self.connection = connection
@@ -76,59 +76,79 @@ class Cursor(object):
 
     @property
     def n_cols(self):
-        return len(self._column_names)
+        return self._result_set.n_cols
 
     @property
     def n_rows(self):
-        return len(self._rows)
+        return self._result_set.n_rows
 
     @property
-    def col_infos(self):
-        return self._col_infos
+    def result_set(self):
+        return self._result_set
 
     @staticmethod
     def close():
         """Close the cursor now (rather than whenever __del__ is called). """
         pass
 
+    @staticmethod
+    def morgify(query, args):
+        """Prepare query string that will be sent to parser
+
+        :param query: Query text
+        :param args: Tuple with query arguments
+        :return: Query text
+        :rtype: str
+        """
+        if args:
+            query %= tuple(["'%s'" % a for a in args])
+        return query
+
     def execute(self, query, args=None):
         """Prepare and execute a database operation (query or command)."""
 
-        if args:
-            query %= tuple(["'%s'" % a for a in args])
-
-        self._rows = ()
+        query = self.morgify(query, args)
 
         try:
             tree = self._sql_parser.parse(query)
         except SQLParserError as err:
             raise ProgrammingError(err)
 
-        if tree.query_type == 'SELECT':
-            self._column_names, self._rows = self._execute_select(tree)
-        elif tree.query_type == "USE_DATABASE":
-            self._db = tree.db
-        elif tree.query_type == "SHOW_DATABASES":
-            self._column_names, self._rows = self._execute_show_databases()
-        elif tree.query_type == "SHOW_TABLES":
-            self._column_names, self._rows = self._execute_show_tables(tree)
-        elif tree.query_type == "CREATE_DATABASE":
-            self._execute_create_database(tree.db)
-        elif tree.query_type == "DROP_DATABASE":
-            self._execute_drop_database(tree.db)
-        elif tree.query_type == "CREATE_TABLE":
-            self._execute_create_table(tree)
-        elif tree.query_type == "DESC_TABLE":
-            self._column_names, self._rows = self._execute_desc_table(tree)
-        elif tree.query_type == "INSERT":
-            self._execute_insert(tree)
-        elif tree.query_type == "UPDATE":
-            return self._execute_update(tree)
-        elif tree.query_type == "WAIT":
-            self._column_names, self._rows = self._execute_wait(tree)
+        if tree.query_type == "SHOW_DATABASES":
+            self._result_set = show_databases(self.connection.client)
 
-        self._col_infos = self._update_columns(self._column_names, self._rows)
-        return len(self._rows)
+        #print(tree)
+        #1/0
+
+        # db = self._get_current_db(tree)
+
+        # if tree.query_type == 'SELECT':
+        #    self._column_names, self._rows = self._execute_select(tree)
+        #elif tree.query_type == "USE_DATABASE":
+        #    self._db = tree.db
+        #elif tree.query_type == "SHOW_DATABASES":
+        #    self._result_set = show_databases(self.connection.client, tree)
+        #    # self._column_names, self._rows = self._execute_show_databases()
+        #elif tree.query_type == "SHOW_TABLES":
+        #    self._column_names, self._rows = \
+        #        show_tables(self.connection.client, db, tree)
+        #elif tree.query_type == "CREATE_DATABASE":
+        #    self._execute_create_database(tree.db)
+        #elif tree.query_type == "DROP_DATABASE":
+        #    self._execute_drop_database(tree.db)
+        #elif tree.query_type == "CREATE_TABLE":
+        #    self._execute_create_table(tree)
+        #elif tree.query_type == "DESC_TABLE":
+        #    self._column_names, self._rows = self._execute_desc_table(tree)
+        #elif tree.query_type == "INSERT":
+        #    self._execute_insert(tree)
+        #elif tree.query_type == "UPDATE":
+        #    return self._execute_update(tree)
+        #elif tree.query_type == "WAIT":
+        #    self._column_names, self._rows = self._execute_wait(tree)
+
+        #self._col_infos = self._update_columns(self._column_names, self._rows)
+
 
     @staticmethod
     def executemany(operation, **kwargs):
@@ -140,11 +160,9 @@ class Cursor(object):
         """Fetch the next row of a query result set, returning a single sequence,
         or None when no more data is available."""
         try:
-            return self._rows[0]
-        except IndexError:
+            return self._result_set.next()
+        except StopIteration:
             return None
-        finally:
-            self._rows = tuple(r for r in self._rows[1:])
 
     def fetchmany(self, n):
         """Fetch the next set of rows of a query result, returning a sequence of sequences (e.g. a list of tuples).
@@ -224,25 +242,6 @@ class Cursor(object):
         finally:
             self._release_read_lock(db, tbl, lock_id)
 
-    def _execute_show_tables(self, tree):
-        db = self._get_current_db(tree)
-
-        etcd_response = self.connection.client.read('/%s' % db)
-        rows = ()
-        try:
-            for node in etcd_response.node['nodes']:
-                row = (node['key'].replace('/%s/' % db, '', 1),)
-                if tree.options['full']:
-                    row += ('BASE TABLE',)
-                rows += (row,)
-        except KeyError:
-            pass
-
-        col_names = ('Table',)
-        if tree.options['full']:
-            col_names += ('Type',)
-
-        return col_names, rows
 
     def _execute_create_database(self, db):
         try:

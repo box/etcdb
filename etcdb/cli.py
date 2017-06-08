@@ -59,7 +59,7 @@ def main(host, version):
         try:
             start_time = time.time()
             cursor.execute(query)
-            _print_table(cursor, time.time() - start_time)
+            _print_table(cursor, execution_time=time.time() - start_time)
         except (etcdb.Error, pyetcd.EtcdException) as err:
             print(err)
         except KeyboardInterrupt:
@@ -70,19 +70,22 @@ def _print_table(cursor, execution_time=0):
     n_rows = cursor.n_rows
 
     def _print_dashes():
-        printf('-' * (sum(c.width for c in cursor.col_infos) + 3 * cursor.n_cols + 1) + '\n')
+        columns = cursor.result_set.columns
+        printf('-' * (sum(c.print_width for c in columns) + 3 * cursor.n_cols + 1) + '\n')
 
     def _print_header():
         printf("|")
-        for colinfo in cursor.col_infos:
-            printf(" %-*s |" % (colinfo.width, colinfo.name))
+        for col in cursor.result_set.columns:
+            printf(" %-*s |" % (col.print_width, col))
+            # printf(" %s | ", col)
         printf('\n')
 
-    def _print_row(line):
+    def _print_row(result_row):
         printf("|")
         i = 0
-        for char in line:
-            printf(" %-*s |" % (cursor.col_infos[i].width, char))
+        columns = cursor.result_set.columns
+        for field in result_row:
+            printf(" %-*s |" % (columns[i].print_width, field))
             i += 1
         printf('\n')
 
