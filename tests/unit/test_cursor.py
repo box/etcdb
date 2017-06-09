@@ -27,3 +27,11 @@ def test_n_rows(cursor):
     rs = ResultSet(ColumnSet().add(Column('foo')))
     cursor._result_set = rs
     assert cursor.n_rows == 0
+
+
+def test_n_rows_none(cursor):
+    assert cursor.n_rows == 0
+
+
+def test_fetchone_none(cursor):
+    assert cursor.fetchone() is None

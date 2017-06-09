@@ -9,7 +9,10 @@ from pyetcd import EtcdNodeExist, EtcdKeyNotFound
 
 from etcdb import ProgrammingError, OperationalError, LOCK_WAIT_TIMEOUT
 from etcdb.eval_expr import eval_expr
-from etcdb.execute.dml.show import show_tables, show_databases
+from etcdb.execute.ddl.create import create_database, create_table
+from etcdb.execute.ddl.drop import drop_database
+from etcdb.execute.dml.show import show_databases, show_tables
+from etcdb.execute.dml.use import use_database
 from etcdb.sqlparser.parser import SQLParser, SQLParserError
 
 
@@ -80,7 +83,10 @@ class Cursor(object):
 
     @property
     def n_rows(self):
-        return self._result_set.n_rows
+        try:
+            return self._result_set.n_rows
+        except AttributeError:
+            return 0
 
     @property
     def result_set(self):
@@ -105,7 +111,13 @@ class Cursor(object):
         return query
 
     def execute(self, query, args=None):
-        """Prepare and execute a database operation (query or command)."""
+        """Prepare and execute a database operation (query or command).
+
+        :param query: Query text.
+        :type query: str
+        :param args: Optional query arguments.
+        :type args: tuple
+        :raise ProgrammingError: if query can't be parsed."""
 
         query = self.morgify(query, args)
 
@@ -114,28 +126,35 @@ class Cursor(object):
         except SQLParserError as err:
             raise ProgrammingError(err)
 
+        self._result_set = None
+
         if tree.query_type == "SHOW_DATABASES":
             self._result_set = show_databases(self.connection.client)
 
-        #print(tree)
-        #1/0
+        elif tree.query_type == "CREATE_DATABASE":
+            create_database(self.connection.client, tree)
+
+        elif tree.query_type == "DROP_DATABASE":
+            drop_database(self.connection.client, tree)
+
+        elif tree.query_type == "USE_DATABASE":
+            self._db = use_database(self.connection.client, tree)
+
+        elif tree.query_type == "CREATE_TABLE":
+            create_table(self.connection.client, tree, db=self._db)
+
+        elif tree.query_type == "SHOW_TABLES":
+            self._result_set = show_tables(self.connection.client, tree,
+                                           db=self._db)
+
 
         # db = self._get_current_db(tree)
 
         # if tree.query_type == 'SELECT':
         #    self._column_names, self._rows = self._execute_select(tree)
-        #elif tree.query_type == "USE_DATABASE":
-        #    self._db = tree.db
-        #elif tree.query_type == "SHOW_DATABASES":
-        #    self._result_set = show_databases(self.connection.client, tree)
-        #    # self._column_names, self._rows = self._execute_show_databases()
         #elif tree.query_type == "SHOW_TABLES":
         #    self._column_names, self._rows = \
         #        show_tables(self.connection.client, db, tree)
-        #elif tree.query_type == "CREATE_DATABASE":
-        #    self._execute_create_database(tree.db)
-        #elif tree.query_type == "DROP_DATABASE":
-        #    self._execute_drop_database(tree.db)
         #elif tree.query_type == "CREATE_TABLE":
         #    self._execute_create_table(tree)
         #elif tree.query_type == "DESC_TABLE":
@@ -161,7 +180,7 @@ class Cursor(object):
         or None when no more data is available."""
         try:
             return self._result_set.next()
-        except StopIteration:
+        except (StopIteration, AttributeError):
             return None
 
     def fetchmany(self, n):
@@ -243,12 +262,6 @@ class Cursor(object):
             self._release_read_lock(db, tbl, lock_id)
 
 
-    def _execute_create_database(self, db):
-        try:
-            self.connection.client.mkdir('/%s' % db)
-        except EtcdNodeExist as err:
-            raise ProgrammingError("Failed to create database: %s" % err)
-
     def _execute_create_table(self, tree):
         db = self._get_current_db(tree)
 
@@ -273,17 +286,6 @@ class Cursor(object):
         except EtcdNodeExist as err:
             raise ProgrammingError("Failed to create table: %s" % err)
 
-    def _execute_show_databases(self):
-        etcd_response = self.connection.client.read('/')
-        rows = ()
-        try:
-            for node in etcd_response.node['nodes']:
-                val = node['key'].lstrip('/')
-                rows += (val,),
-
-        except KeyError:
-            pass
-        return ('Database',), rows
 
     def _eval_function(self, name, db=None, tbl=None):
         if name == "VERSION":

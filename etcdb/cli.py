@@ -60,7 +60,7 @@ def main(host, version):
             start_time = time.time()
             cursor.execute(query)
             _print_table(cursor, execution_time=time.time() - start_time)
-        except (etcdb.Error, pyetcd.EtcdException) as err:
+        except etcdb.Error as err:
             print(err)
         except KeyboardInterrupt:
             print('Query is interrupted')

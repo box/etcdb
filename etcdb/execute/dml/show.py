@@ -1,3 +1,6 @@
+from pyetcd import EtcdKeyNotFound
+
+from etcdb import OperationalError
 from etcdb.resultset import ResultSet, ColumnSet, Column, Row
 
 
@@ -7,8 +10,6 @@ def show_databases(etcd_client):
 
     :param etcd_client: etcd client
     :type etcd_client: pyetcd.client.Client
-    :param tree: Parse tree
-    :type tree: SQLTree
     :return: ResultSet instance
     :rtype: ResultSet
     """
@@ -25,9 +26,9 @@ def show_databases(etcd_client):
     return result_set
 
 
-def show_tables(etcd_client, db, tree):
+def show_tables(etcd_client, tree, db):
     """
-    Execute SHOW [FULL] TABLES query
+    Execute SHOW [FULL] TABLES query#
 
     :param etcd_client: etcd client
     :type etcd_client: pyetcd.client.Client
@@ -38,27 +39,21 @@ def show_tables(etcd_client, db, tree):
     :return: ResultSet instance
     :rtype: ResultSet
     """
+    columns = ColumnSet().add(Column('Tables_in_%s' % db))
+    if tree.options['full']:
+        columns.add(Column('Table_type'))
 
-    etcd_response = etcd_client.read('/%s' % db)
-    columns = ColumnSet()
-
-    # rows = ResultSet()
+    result_set = ResultSet(columns)
 
     try:
-        for node in etcd_response.node['nodes']:
-            row = (node['key'].replace('/%s/' % db, '', 1),)
-            if tree.options['full']:
-                row += ('BASE TABLE',)
-            rows += (row,)
-    except KeyError:
-        pass
+        etcd_response = etcd_client.read('/%s' % db)
+    except EtcdKeyNotFound:
+        raise OperationalError('No database selected')
 
-    col_names = ('Table',)
-
-    if tree.options['full']:
-        col_names += ('Type',)
-
-    return col_names, rows
-
-
-
+    for node in etcd_response.node['nodes']:
+        table_name = node['key'].replace('/%s/' % db, '', 1)
+        row = (table_name, )
+        if tree.options['full']:
+            row += ('BASE TABLE',)
+        result_set.add_row(Row(row))
+    return result_set
