@@ -14,7 +14,7 @@ def test_create_table_raises_error():
     etcd_client = mock.Mock()
 
     # Database is not selected
-    with pytest.raises(ProgrammingError):
+    with pytest.raises(OperationalError):
         create_table(etcd_client, SQLTree())
 
     # primary key must be defined

@@ -123,10 +123,10 @@ def test_connection_cursor(etcdb_connection):
     assert isinstance(etcdb_connection.cursor(), Cursor)
 
 
-@mock.patch.object(Client, 'version')
-def test_cursor_execute(mock_client, etcdb_connection):
-    cursor = etcdb_connection.cursor()
-    assert cursor.execute('SELECT VERSION()') == 1
+#@mock.patch.object(Client, 'version')
+#def test_cursor_execute(mock_client, etcdb_connection):
+#    cursor = etcdb_connection.cursor()
+#    assert cursor.execute('SELECT VERSION()') == 1
 
 
 def test_split_version():

@@ -50,10 +50,14 @@ def show_tables(etcd_client, tree, db):
     except EtcdKeyNotFound:
         raise OperationalError('No database selected')
 
-    for node in etcd_response.node['nodes']:
-        table_name = node['key'].replace('/%s/' % db, '', 1)
-        row = (table_name, )
-        if tree.options['full']:
-            row += ('BASE TABLE',)
-        result_set.add_row(Row(row))
+    try:
+        for node in etcd_response.node['nodes']:
+            table_name = node['key'].replace('/%s/' % db, '', 1)
+            row = (table_name, )
+            if tree.options['full']:
+                row += ('BASE TABLE',)
+            result_set.add_row(Row(row))
+    except KeyError:
+        pass
+
     return result_set

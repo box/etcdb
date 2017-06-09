@@ -19,6 +19,7 @@ def p_statement(p):
         | set_statement
         | insert_statement
         | drop_database_statement
+        | drop_table_statement
         | desc_table_statement
         | update_table_statement
         | wait_statement"""
@@ -54,6 +55,23 @@ def p_drop_database_statement(p):
     """drop_database_statement : DROP DATABASE identifier"""
     _parse_tree.db = p[3]
     _parse_tree.query_type = "DROP_DATABASE"
+
+
+def p_drop_table_statement(p):
+    """drop_table_statement : DROP TABLE identifier opt_IF_EXISTS"""
+    _parse_tree.table = p[3]
+    _parse_tree.query_type = "DROP_TABLE"
+    _parse_tree.options['if_exists'] = p[4]
+
+
+def p_opt_if_exists_empty(p):
+    """opt_IF_EXISTS : """
+    p[0] = False
+
+
+def p_opt_if_exists(p):
+    """opt_IF_EXISTS : IF EXISTS"""
+    p[0] = True
 
 
 def p_insert_statement(p):

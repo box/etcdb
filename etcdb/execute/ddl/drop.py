@@ -5,6 +5,7 @@ from etcdb import OperationalError
 
 def drop_database(etcd_client, tree):
     """
+    Drop database.
 
     :param etcd_client: Etcd client
     :type etcd_client: Client
@@ -17,3 +18,38 @@ def drop_database(etcd_client, tree):
     except EtcdKeyNotFound:
         raise OperationalError("Can't drop database '%s';"
                                " database doesn't exist" % tree.db)
+
+
+def drop_table(etcd_client, tree, db=None):
+    """
+    Drop table.
+
+    :param etcd_client: Etcd client
+    :type etcd_client: Client
+    :param tree: Parsing tree
+    :type tree: SQLTree
+    :param db: Database name to use if not defined in the parsing tree.
+    :type db: str
+    :raise OperationalError: if database is not selected
+        or if table doesn't exist.
+    """
+    if not db:
+        db = tree.db
+
+    if not db:
+        raise OperationalError('No database selected')
+
+    # Check if database exists
+    try:
+        etcd_client.read('/%s' % db)
+    except EtcdKeyNotFound:
+        raise OperationalError("Unknown database '%s'" % db)
+
+    try:
+        key = '/%s/%s' % (db, tree.table)
+        etcd_client.rmdir(key, recursive=True)
+    except EtcdKeyNotFound:
+        if tree.options['if_exists']:
+            pass
+        else:
+            raise OperationalError("Unknown table '%s'" % tree.table)

@@ -32,16 +32,15 @@ def create_table(etcd_client, tree, db=None):
     :type tree: SQLTree
     :param db: Database name to use if not defined in the parsing tree.
     :type db: str
-    :raise ProgrammingError: if database is not selected,
-        or if primary key is not defined,
-        or the primary key is NULL-able,
-        or table exists.
+    :raise ProgrammingError: If primary key is not defined,
+        or the primary key is NULL-able.
+    :raise OperationalError: if database is not selected or table exists.
     """
     if not db:
         db = tree.db
 
     if not db:
-        raise ProgrammingError('No database selected')
+        raise OperationalError('No database selected')
 
     # Check if database exists
     try:

@@ -685,6 +685,24 @@ def test_drop_database(parser):
     assert tree.db == 'foo'
 
 
+def test_drop_table(parser):
+    query = "DROP TABLE foo"
+    tree = parser.parse(query)
+    assert tree.success
+    assert tree.query_type == "DROP_TABLE"
+    assert tree.table == 'foo'
+    assert tree.options['if_exists'] is False
+
+
+def test_drop_table_if_exists(parser):
+    query = "DROP TABLE foo IF EXISTS"
+    tree = parser.parse(query)
+    assert tree.success
+    assert tree.query_type == "DROP_TABLE"
+    assert tree.table == 'foo'
+    assert tree.options['if_exists'] is True
+
+
 def test_desc_table(parser):
     query = "desc foo"
     tree = parser.parse(query)

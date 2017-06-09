@@ -9,6 +9,8 @@ def use_database(etcd_client, tree):
 
     :param etcd_client: etcd client
     :type etcd_client: pyetcd.client.Client
+    :param tree: Parsing tree.
+    :type tree: SQLTree
     :return: Database name
     :raise OperationalError: if database doesn't exist.
     """
