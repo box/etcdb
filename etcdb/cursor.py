@@ -11,7 +11,7 @@ from etcdb import ProgrammingError, OperationalError, LOCK_WAIT_TIMEOUT
 from etcdb.eval_expr import eval_expr
 from etcdb.execute.ddl.create import create_database, create_table
 from etcdb.execute.ddl.drop import drop_database, drop_table
-from etcdb.execute.dml.show import show_databases, show_tables
+from etcdb.execute.dml.show import show_databases, show_tables, desc_table
 from etcdb.execute.dml.use import use_database
 from etcdb.sqlparser.parser import SQLParser, SQLParserError
 
@@ -149,17 +149,15 @@ class Cursor(object):
         elif tree.query_type == "SHOW_TABLES":
             self._result_set = show_tables(self.connection.client, tree,
                                            db=self._db)
+        elif tree.query_type == "DESC_TABLE":
+            self._result_set = desc_table(self.connection.client, tree,
+                                          db=self._db)
 
 
         # db = self._get_current_db(tree)
 
         # if tree.query_type == 'SELECT':
         #    self._column_names, self._rows = self._execute_select(tree)
-        #elif tree.query_type == "SHOW_TABLES":
-        #    self._column_names, self._rows = \
-        #        show_tables(self.connection.client, db, tree)
-        #elif tree.query_type == "CREATE_TABLE":
-        #    self._execute_create_table(tree)
         #elif tree.query_type == "DESC_TABLE":
         #    self._column_names, self._rows = self._execute_desc_table(tree)
         #elif tree.query_type == "INSERT":

@@ -1,8 +1,9 @@
 import mock
 import pytest
-from pyetcd import EtcdResult
+from pyetcd import EtcdResult, EtcdKeyNotFound
 
-from etcdb.execute.dml.show import show_databases, show_tables
+from etcdb import ProgrammingError
+from etcdb.execute.dml.show import show_databases, show_tables, desc_table
 from etcdb.resultset import ResultSet, ColumnSet, Column, Row
 from etcdb.sqlparser.sql_tree import SQLTree
 
@@ -81,3 +82,12 @@ def test_show_tables(content, rows):
     print("Actual: \n%s" % result)
     # noinspection PyTypeChecker
     assert result == rs
+
+
+def test_desc_table_raises():
+    etcd_client = mock.Mock()
+    etcd_client.read.side_effect = EtcdKeyNotFound
+    tree = SQLTree()
+    with pytest.raises(ProgrammingError):
+        # noinspection PyTypeChecker
+        desc_table(etcd_client, tree, 'foo')
