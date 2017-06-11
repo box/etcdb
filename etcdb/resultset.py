@@ -4,14 +4,67 @@ import json
 from etcdb import ProgrammingError
 
 
+class ColumnOptions(object):
+
+    def __init__(self, *options, **kwoptions):
+        for dictionary in options:
+            for key in dictionary:
+                setattr(self, key, dictionary[key])
+
+        for key in kwoptions:
+            setattr(self, key, kwoptions[key])
+
+    auto_increment = False
+    primary = False
+    nullable = None
+    default = None
+    unique = None
+
+
 class Column(object):
-    def __init__(self, colname):
+    """
+    Instantiate a Column
+
+    :param colname: Column name.
+    :type colname: str
+    :param coltype: Column type
+    :type coltype: str
+    :param options: Column options
+    :type options: ColumnOptions
+    """
+    def __init__(self, colname, coltype=None, options=None):
         self._colname = colname
         self._print_width = len(self._colname)
+        self._coltype = coltype
+        self._options = options
 
     @property
     def name(self):
         return self._colname
+
+    @property
+    def type(self):
+        return self._coltype
+
+    @property
+    def auto_increment(self):
+        return self._options.auto_increment
+
+    @property
+    def primary(self):
+        return self._options.primary
+
+    @property
+    def nullable(self):
+        return self._options.nullable
+
+    @property
+    def default(self):
+        return self._options.default
+
+    @property
+    def unique(self):
+        return self._options.unique
 
     @property
     def print_width(self):
@@ -31,9 +84,27 @@ class Column(object):
 
 
 class ColumnSet(object):
-    def __init__(self):
+    """
+    Instantiate a Column set
+
+    :param columns: Optional dictionary with column definitions
+    :type columns: dict
+    """
+    def __init__(self, columns=None):
+
         self._columns = []
         self._column_position = 0
+        if columns:
+            for colname, value in columns.iteritems():
+                self._columns.append(Column(colname,
+                                            coltype=value['type'],
+                                            options=ColumnOptions(
+                                                value['options']
+                                            )))
+            pass
+        else:
+            self._columns = []
+            self._column_position = 0
 
     def add(self, column):
         """Add column to ColumnSet
@@ -56,6 +127,14 @@ class ColumnSet(object):
     @property
     def columns(self):
         return self._columns
+
+    @property
+    def primary(self):
+        """Return primary key column"""
+        for col in self._columns:
+            if col.primary:
+                return col
+        return None
 
     def __contains__(self, item):
         return item in self._columns
@@ -84,7 +163,12 @@ class ColumnSet(object):
             raise StopIteration()
 
     def __getitem__(self, key):
-        return self._columns[key]
+        if isinstance(key, int):
+            return self._columns[key]
+        else:
+            for col in self._columns:
+                if col == Column(key):
+                    return col
 
 
 class Row(object):

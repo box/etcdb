@@ -11,6 +11,7 @@ from etcdb import ProgrammingError, OperationalError, LOCK_WAIT_TIMEOUT
 from etcdb.eval_expr import eval_expr
 from etcdb.execute.ddl.create import create_database, create_table
 from etcdb.execute.ddl.drop import drop_database, drop_table
+from etcdb.execute.dml.insert import insert
 from etcdb.execute.dml.show import show_databases, show_tables, desc_table
 from etcdb.execute.dml.use import use_database
 from etcdb.sqlparser.parser import SQLParser, SQLParserError
@@ -126,6 +127,9 @@ class Cursor(object):
         except SQLParserError as err:
             raise ProgrammingError(err)
 
+        #print(tree)
+        #1/0
+
         self._result_set = None
 
         if tree.query_type == "SHOW_DATABASES":
@@ -152,14 +156,15 @@ class Cursor(object):
         elif tree.query_type == "DESC_TABLE":
             self._result_set = desc_table(self.connection.client, tree,
                                           db=self._db)
+        elif tree.query_type == "INSERT":
+            insert(self.connection.client, tree,
+                   db=self._db)
 
 
         # db = self._get_current_db(tree)
 
         # if tree.query_type == 'SELECT':
         #    self._column_names, self._rows = self._execute_select(tree)
-        #elif tree.query_type == "DESC_TABLE":
-        #    self._column_names, self._rows = self._execute_desc_table(tree)
         #elif tree.query_type == "INSERT":
         #    self._execute_insert(tree)
         #elif tree.query_type == "UPDATE":
@@ -263,31 +268,6 @@ class Cursor(object):
             self._release_read_lock(db, tbl, lock_id)
 
 
-    def _execute_create_table(self, tree):
-        db = self._get_current_db(tree)
-
-        pk_field = None
-        for field_name, value in tree.fields.iteritems():
-            try:
-                if value['options']['primary']:
-                    pk_field = field_name
-            except KeyError:
-                pass
-
-        if not pk_field:
-            raise ProgrammingError('Primary key must be defined')
-
-        if tree.fields[pk_field]['options']['nullable']:
-            raise ProgrammingError('Primary key must be NOT NULL')
-
-        try:
-            table_name = '/%s/%s' % (db, tree.table)
-            self.connection.client.mkdir(table_name)
-            self.connection.client.write(table_name + "/_fields", json.dumps(tree.fields))
-        except EtcdNodeExist as err:
-            raise ProgrammingError("Failed to create table: %s" % err)
-
-
     def _eval_function(self, name, db=None, tbl=None):
         if name == "VERSION":
             return self._eval_function_version()
@@ -378,58 +358,6 @@ class Cursor(object):
     def _execute_drop_database(self, db):
         self.connection.client.rmdir('/%s' % db, recursive=True)
 
-    def _execute_desc_table(self, tree):
-        db = self._get_current_db(tree)
-
-        table = tree.table
-
-        key = '/{db}/{table}/_fields'.format(db=db, table=table)
-        try:
-            etcd_result = self.connection.client.read(key)
-        except EtcdKeyNotFound:
-            raise ProgrammingError('Table `{db}`.`{table}` doesn\'t exist'.format(db=db, table=table))
-
-        fields = json.loads(etcd_result.node['value'])
-        rows = ()
-
-        for k, v in fields.iteritems():
-            field_type = v['type']
-
-            if v['options']['nullable']:
-                nullable = 'YES'
-            else:
-                nullable = 'NO'
-
-            indexes = ''
-            if 'primary' in v['options'] and v['options']['primary']:
-                indexes = 'PRI'
-
-            if 'unique' in v['options'] and v['options']['unique']:
-                indexes = 'UNI'
-
-            try:
-                default_value = v['options']['default']
-            except KeyError:
-                default_value = ''
-
-            extra = ''
-            if 'auto_increment' in v['options'] and v['options']['auto_increment']:
-                extra = 'auto_increment'
-
-            row = (k, field_type, nullable, indexes, default_value, extra)
-            rows += (row, )
-
-        return ('Field', 'Type', 'Null', 'Key', 'Default', 'Extra'), rows
-
-    def _get_current_db(self, tree):
-        db = self._db
-
-        if tree.db:
-            db = tree.db
-
-        if not db:
-            raise OperationalError('No database selected')
-        return db
 
     def _get_table_fields(self, db, tbl):
         etcd_result = self.connection.client.read('/{db}/{tbl}/_fields'.format(db=db, tbl=tbl))

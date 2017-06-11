@@ -1,7 +1,7 @@
 import pytest
 
 from etcdb import ProgrammingError
-from etcdb.resultset import Column, ColumnSet, Row, ResultSet
+from etcdb.resultset import Column, ColumnSet, Row, ResultSet, ColumnOptions
 
 
 def test_column():
@@ -76,6 +76,8 @@ def test_column_set_getitem():
     cs.add(Column('bar'))
     assert cs[0] == Column('foo')
     assert cs[1] == Column('bar')
+    assert cs['foo'] == Column('foo')
+    assert cs['bar'] == Column('bar')
 
 
 def test_row_raises():
@@ -219,3 +221,109 @@ def test_result_set_iterable():
     assert rs.next() == Row(('foo_value2', 'bar_value2'))
     with pytest.raises(StopIteration):
         rs.next()
+
+
+def test_column_options_sets_attr():
+    opts = {
+        'auto_increment': True,
+        'primary': True,
+        'nullable': True,
+        'default': 'foo',
+        'unique': True
+    }
+    co = ColumnOptions(opts)
+    assert co.auto_increment is True
+    assert co.primary is True
+    assert co.nullable is True
+    assert co.default == 'foo'
+    assert co.unique is True
+
+
+def test_column_set_type():
+    col = Column('foo', coltype='INT')
+    assert col.type == 'INT'
+
+
+def test_column_set_options():
+    col = Column('foo',
+                 coltype='INT',
+                 options=ColumnOptions({
+                     'auto_increment': True,
+                     'primary': False,
+                     'nullable': True,
+                     'default': 'bar',
+                     'unique': True
+                 }))
+    assert col.type == 'INT'
+    assert col.auto_increment is True
+    assert col.primary is False
+    assert col.nullable is True
+    assert col.default == 'bar'
+    assert col.unique is True
+
+
+def test_column_options_sets_via_args():
+    co = ColumnOptions(auto_increment=True,
+                       primary=True,
+                       nullable=True,
+                       default='foo',
+                       unique=True
+                       )
+    assert co.auto_increment is True
+    assert co.primary is True
+    assert co.nullable is True
+    assert co.default == 'foo'
+    assert co.unique is True
+
+
+def test_column_set_from_dict():
+    fields = {
+        "id": {
+            "type": "INT",
+            "options": {
+                "auto_increment": True,
+                "primary": True,
+                "nullable": False
+            }
+        },
+        "name": {
+            "type": "VARCHAR",
+            "options": {
+                "nullable": False
+            }
+        }
+    }
+    cs = ColumnSet(columns=fields)
+    assert Column('id') in cs
+    assert Column('name') in cs
+
+    assert cs['id'].type == 'INT'
+    assert cs['name'].type == 'VARCHAR'
+
+    assert cs['id'].auto_increment is True
+    assert cs['id'].primary is True
+    assert cs['id'].nullable is False
+
+    assert cs['name'].nullable is False
+
+
+def test_column_set_primary():
+    fields = {
+        "id": {
+            "type": "INT",
+            "options": {
+                "auto_increment": True,
+                "primary": True,
+                "nullable": False
+            }
+        },
+        "name": {
+            "type": "VARCHAR",
+            "options": {
+                "nullable": False
+            }
+        }
+    }
+    cs = ColumnSet(columns=fields)
+    assert cs.primary == Column('id')
+    assert cs.primary.type == 'INT'
