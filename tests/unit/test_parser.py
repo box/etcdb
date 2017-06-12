@@ -3,25 +3,77 @@ from pprint import pprint
 import pytest
 
 
-def test_select_version(parser):
-    tree = parser.parse('SELECT VERSION()')
+def test_select_star(parser):
+    tree = parser.parse('SELECT * from bar')
     assert tree.query_type == "SELECT"
+    assert tree.table == 'bar'
     assert tree.expressions == [
-        {
-            'type': 'function',
-            'name': 'VERSION'
-        }
+        (
+            ('*', None),
+            None
+        )
     ]
 
 
-def test_select_version_i(parser):
-    tree = parser.parse('select version()')
+def test_select_table_wild(parser):
+    tree = parser.parse('SELECT bar.* from bar')
     assert tree.query_type == "SELECT"
+    assert tree.table == 'bar'
     assert tree.expressions == [
-        {
-            'type': 'function',
-            'name': 'VERSION'
-        }
+        (
+            ('*', 'bar'),
+            None
+        )
+    ]
+
+
+@pytest.mark.parametrize('query', [
+    'SELECT VERSION()',
+    'select version()'
+])
+def test_select_version(query, parser):
+    tree = parser.parse(query)
+    assert tree.query_type == "SELECT"
+    assert tree.table is None
+    pprint(tree.expressions)
+    assert tree.expressions == [
+        (
+            ('bool_primary',
+                ('predicate',
+                    ('bit_expr',
+                        ('simple_expr',
+                            ('function_call', 'VERSION')
+                         )
+                     )
+                 )
+             ),
+            None
+        )
+    ]
+
+
+def test_select_version_table_wild(parser):
+    tree = parser.parse('SELECT VERSION(), bar.* FROM bar')
+    assert tree.query_type == "SELECT"
+    assert tree.table == 'bar'
+    pprint(tree.expressions)
+    assert tree.expressions == [
+        (
+            ('bool_primary',
+             ('predicate',
+              ('bit_expr',
+               ('simple_expr',
+                ('function_call', 'VERSION')
+                )
+               )
+              )
+             ),
+            None
+        ),
+        (
+            ('*', 'bar'),
+            None
+        )
     ]
 
 
@@ -379,56 +431,68 @@ def test_select_fields_from(parser):
     assert tree.success
     assert tree.query_type == "SELECT"
     assert tree.table == "django_migrations"
-    print(tree.expressions)
+    pprint(tree.expressions)
     assert tree.expressions == [
-        {
-            'type': 'field',
-            'table_name': 'django_migrations',
-            'name': 'app'
-        },
-        {
-            'type': 'field',
-            'table_name': 'django_migrations',
-            'name': 'name'
-        }
+        (
+            ('bool_primary',
+                ('predicate',
+                    ('bit_expr',
+                        ('simple_expr',
+                            ('IDENTIFIER', 'django_migrations.app')
+                         )
+                     )
+                 )
+             ),
+            None),
+        (
+            ('bool_primary',
+                ('predicate',
+                    ('bit_expr',
+                        ('simple_expr',
+                            ('IDENTIFIER', 'django_migrations.name')
+                         )
+                     )
+                 )
+             ),
+            None
+        )
     ]
 
 
-def test_select_short_fields_from(parser):
-    query = "SELECT app, foo FROM `django_migrations`"
+@pytest.mark.parametrize('query', [
+    "SELECT app, foo FROM `django_migrations`",
+    "SELECT `app`, `foo` FROM `django_migrations`"
+])
+def test_select_short_fields_from(query, parser):
     tree = parser.parse(query)
     assert tree.success
     assert tree.query_type == "SELECT"
     assert tree.table == "django_migrations"
     print(tree.expressions)
     assert tree.expressions == [
-        {
-            'type': 'field',
-            'name': 'app'
-        },
-        {
-            'type': 'field',
-            'name': 'foo'
-        }
-    ]
-
-
-def test_select_short_q_fields_from(parser):
-    query = "SELECT `app`, `foo` FROM `django_migrations`"
-    tree = parser.parse(query)
-    assert tree.success
-    assert tree.query_type == "SELECT"
-    assert tree.table == "django_migrations"
-    print(tree.expressions)
-    assert tree.expressions == [
-        {
-            'type': 'field',
-            'name': 'app'
-        },
-        {
-            'type': 'field',
-            'name': 'foo'
-        }
+        (
+            ('bool_primary',
+             ('predicate',
+              ('bit_expr',
+               ('simple_expr',
+                ('IDENTIFIER', 'app')
+                )
+               )
+              )
+             ),
+            None),
+        (
+            ('bool_primary',
+             ('predicate',
+              ('bit_expr',
+               ('simple_expr',
+                ('IDENTIFIER', 'foo')
+                )
+               )
+              )
+             ),
+            None
+        )
     ]
 
 
@@ -439,14 +503,30 @@ def test_select_two_func(parser):
     assert tree.query_type == "SELECT"
     print(tree.expressions)
     assert tree.expressions == [
-        {
-            'type': 'function',
-            'name': 'VERSION'
-        },
-        {
-            'type': 'function',
-            'name': 'VERSION'
-        }
+        (
+            ('bool_primary',
+             ('predicate',
+              ('bit_expr',
+               ('simple_expr',
+                ('function_call', 'VERSION')
+                )
+               )
+              )
+             ),
+            None
+        ),
+        (
+            ('bool_primary',
+             ('predicate',
+              ('bit_expr',
+               ('simple_expr',
+                ('function_call', 'VERSION')
+                )
+               )
+              )
+             ),
+            None
+        )
     ]
 
 
@@ -456,10 +536,18 @@ def test_select_var(parser):
     assert tree.success
     assert tree.query_type == "SELECT"
     assert tree.expressions == [
-        {
-            'type': 'variable',
-            'name': 'SQL_MODE'
-        }
+        (
+            ('bool_primary',
+             ('predicate',
+              ('bit_expr',
+               ('simple_expr',
+                ('variable', 'sql_mode')
+                )
+               )
+              )
+             ),
+            None
+        )
     ]
 
 
@@ -469,10 +557,18 @@ def test_select_var_SQL_AUTO_IS_NULL(parser):
     assert tree.success
     assert tree.query_type == "SELECT"
     assert tree.expressions == [
-        {
-            'type': 'variable',
-            'name': 'SQL_AUTO_IS_NULL'
-        }
+        (
+            ('bool_primary',
+             ('predicate',
+              ('bit_expr',
+               ('simple_expr',
+                ('variable', 'SQL_AUTO_IS_NULL')
+                )
+               )
+              )
+             ),
+            None
+        )
     ]
 
 
@@ -490,10 +586,18 @@ def test_select_from_tbl(parser):
     assert tree.table == 't1'
     assert tree.db is None
     assert tree.expressions == [
-        {
-            'type': 'field',
-            'name': 'f1'
-        }
+        (
+            ('bool_primary',
+             ('predicate',
+              ('bit_expr',
+               ('simple_expr',
+                ('IDENTIFIER', 'f1')
+                )
+               )
+              )
+             ),
+            None
+        ),
     ]
 
 
@@ -504,14 +608,30 @@ def test_select_from_db_tbl(parser):
     assert tree.table == 't1'
     assert tree.db == 'd1'
     assert tree.expressions == [
-        {
-            'type': 'field',
-            'name': 'f1'
-        },
-        {
-            'type': 'field',
-            'name': 'f2'
-        }
+        (
+            ('bool_primary',
+             ('predicate',
+              ('bit_expr',
+               ('simple_expr',
+                ('IDENTIFIER', 'f1')
+                )
+               )
+              )
+             ),
+            None
+        ),
+        (
+            ('bool_primary',
+             ('predicate',
+              ('bit_expr',
+               ('simple_expr',
+                ('IDENTIFIER', 'f2')
+                )
+               )
+              )
+             ),
+            None
+        ),
     ]
 
 
@@ -520,19 +640,35 @@ def test_select_from_db_tbl(parser):
         "SELECT f1, f2 FROM t1 WHERE f1 = 'foo'",
         't1',
         [
-            {
-                'type': 'field',
-                'name': 'f1'
-            },
-            {
-                'type': 'field',
-                'name': 'f2'
-            }
+            (
+                ('bool_primary',
+                 ('predicate',
+                  ('bit_expr',
+                   ('simple_expr',
+                    ('IDENTIFIER', 'f1')
+                    )
+                   )
+                  )
+                 ),
+                None
+            ),
+            (
+                ('bool_primary',
+                 ('predicate',
+                  ('bit_expr',
+                   ('simple_expr',
+                    ('IDENTIFIER', 'f2')
+                    )
+                   )
+                  )
+                 ),
+                None
+            ),
         ],
         ('bool_primary',
          ('=',
           ('predicate', ('bit_expr', ('simple_expr', ('IDENTIFIER', 'f1')))),
-          ('bit_expr', ('simple_expr', ('STRING', 'foo')))))
+          ('bit_expr', ('simple_expr', ('literal', 'foo')))))
     ),
     (
         """
@@ -545,28 +681,52 @@ def test_select_from_db_tbl(parser):
         """,
         'django_content_type',
         [
-            {
-                'type': 'field',
-                'name': 'id'
-            },
-            {
-                'type': 'field',
-                'name': 'app_label'
-            },
-            {
-                'type': 'field',
-                'name': 'model'
-            }
+            (
+                ('bool_primary',
+                 ('predicate',
+                  ('bit_expr',
+                   ('simple_expr',
+                    ('IDENTIFIER', 'id')
+                    )
+                   )
+                  )
+                 ),
+                None
+            ),
+            (
+                ('bool_primary',
+                 ('predicate',
+                  ('bit_expr',
+                   ('simple_expr',
+                    ('IDENTIFIER', 'app_label')
+                    )
+                   )
+                  )
+                 ),
+                None
+            ),
+            (
+                ('bool_primary',
+                 ('predicate',
+                  ('bit_expr',
+                   ('simple_expr',
+                    ('IDENTIFIER', 'model')
+                    )
+                   )
+                  )
+                 ),
+                None
+            ),
         ],
         ('AND',
          ('bool_primary',
           ('=',
            ('predicate', ('bit_expr', ('simple_expr', ('IDENTIFIER', 'model')))),
-           ('bit_expr', ('simple_expr', ('STRING', 'logentry'))))),
+           ('bit_expr', ('simple_expr', ('literal', 'logentry'))))),
          ('bool_primary',
           ('=',
            ('predicate', ('bit_expr', ('simple_expr', ('IDENTIFIER', 'app_label')))),
-           ('bit_expr', ('simple_expr', ('STRING', 'admin'))))))
+           ('bit_expr', ('simple_expr', ('literal', 'admin'))))))
     ),
     (
         """
@@ -579,21 +739,42 @@ def test_select_from_db_tbl(parser):
         """,
         'django_content_type',
         [
-            {
-                'type': 'field',
-                'name': 'id',
-                'table_name': 'django_content_type'
-            },
-            {
-                'type': 'field',
-                'name': 'app_label',
-                'table_name': 'django_content_type'
-            },
-            {
-                'type': 'field',
-                'name': 'model',
-                'table_name': 'django_content_type'
-            }
+            (
+                ('bool_primary',
+                 ('predicate',
+                  ('bit_expr',
+                   ('simple_expr',
+                    ('IDENTIFIER', 'django_content_type.id')
+                    )
+                   )
+                  )
+                 ),
+                None
+            ),
+            (
+                ('bool_primary',
+                 ('predicate',
+                  ('bit_expr',
+                   ('simple_expr',
+                    ('IDENTIFIER', 'django_content_type.app_label')
+                    )
+                   )
+                  )
+                 ),
+                None
+            ),
+            (
+                ('bool_primary',
+                 ('predicate',
+                  ('bit_expr',
+                   ('simple_expr',
+                    ('IDENTIFIER', 'django_content_type.model')
+                    )
+                   )
+                  )
+                 ),
+                None
+            ),
         ],
         ('AND',
          ('bool_primary',
@@ -601,13 +782,13 @@ def test_select_from_db_tbl(parser):
            ('predicate',
             ('bit_expr',
              ('simple_expr', ('IDENTIFIER', 'django_content_type.model')))),
-           ('bit_expr', ('simple_expr', ('STRING', 'logentry'))))),
+           ('bit_expr', ('simple_expr', ('literal', 'logentry'))))),
          ('bool_primary',
           ('=',
            ('predicate',
             ('bit_expr',
              ('simple_expr', ('IDENTIFIER', 'django_content_type.app_label')))),
-           ('bit_expr', ('simple_expr', ('STRING', 'admin'))))))
+           ('bit_expr', ('simple_expr', ('literal', 'admin'))))))
     )
 ])
 def test_select_from_tbl_where(parser, query, table, expressions, where):
@@ -643,16 +824,30 @@ def test_select_cols_with_tbl(parser):
     assert tree.table == 'django_migrations'
     assert tree.db is None
     assert tree.expressions == [
-        {
-            'type': 'field',
-            'name': 'app',
-            'table_name': 'django_migrations'
-        },
-        {
-            'type': 'field',
-            'name': 'name',
-            'table_name': 'django_migrations'
-        }
+        (
+            ('bool_primary',
+             ('predicate',
+              ('bit_expr',
+               ('simple_expr',
+                ('IDENTIFIER', 'django_migrations.app')
+                )
+               )
+              )
+             ),
+            None
+        ),
+        (
+            ('bool_primary',
+             ('predicate',
+              ('bit_expr',
+               ('simple_expr',
+                ('IDENTIFIER', 'django_migrations.name')
+                )
+               )
+              )
+             ),
+            None
+        ),
     ]
 
 
@@ -683,6 +878,24 @@ def test_drop_database(parser):
     assert tree.success
     assert tree.query_type == "DROP_DATABASE"
     assert tree.db == 'foo'
+
+
+def test_drop_table(parser):
+    query = "DROP TABLE foo"
+    tree = parser.parse(query)
+    assert tree.success
+    assert tree.query_type == "DROP_TABLE"
+    assert tree.table == 'foo'
+    assert tree.options['if_exists'] is False
+
+
+def test_drop_table_if_exists(parser):
+    query = "DROP TABLE foo IF EXISTS"
+    tree = parser.parse(query)
+    assert tree.success
+    assert tree.query_type == "DROP_TABLE"
+    assert tree.table == 'foo'
+    assert tree.options['if_exists'] is True
 
 
 def test_desc_table(parser):
@@ -762,6 +975,33 @@ def test_select_one_parenthesis(parser):
     assert tree.table == 'django_session'
     assert tree.db is None
 
+    pprint(tree.expressions)
+    # 1/0
+    assert tree.expressions == [
+        (
+            ('bool_primary',
+                ('predicate',
+                    ('bit_expr',
+                        ('simple_expr',
+                            ('expr',
+                                ('bool_primary',
+                                    ('predicate',
+                                        ('bit_expr',
+                                            ('simple_expr',
+                                                ('literal', '1')
+                                             )
+                                         )
+                                     )
+                                 )
+                             )
+                         )
+                     )
+                 )
+             ),
+            'a'
+        )
+    ]
+
 
 def test_update(parser):
     query = "UPDATE `auth_user` SET `last_login` = '2016-10-10 19:19:56' WHERE `auth_user`.`id` = '2'"
@@ -779,12 +1019,21 @@ def test_select_count_star(parser):
     assert tree.query_type == "SELECT"
     assert tree.table == 'foo_config'
     assert tree.db is None
+    pprint(tree.expressions)
+    # 1/0
     assert tree.expressions == [
-        {
-            'type': 'function',
-            'name': 'COUNT',
-            'args': ['*']
-        }
+        (
+            ('bool_primary',
+                ('predicate',
+                    ('bit_expr',
+                        ('simple_expr',
+                            ('function_call', 'COUNT')
+                         )
+                     )
+                 )
+             ),
+            '__count'
+        )
     ]
 
 
@@ -802,10 +1051,19 @@ def test_select_order(query, direction, parser):
     assert tree.table == 'bar'
     assert tree.db is None
     assert tree.expressions == [
-        {
-            'type': 'field',
-            'name': 'foo'
-        }
+        (
+            ('bool_primary',
+             ('predicate',
+              ('bit_expr',
+               ('simple_expr',
+                ('IDENTIFIER', 'foo')
+                )
+               )
+              )
+             ),
+            None
+        ),
+
     ]
     assert tree.order['by'] == 'foo'
     assert tree.order['direction'] == direction
@@ -815,13 +1073,9 @@ def test_select_wait(parser):
     tree = parser.parse("wait(foo) from bar")
     assert tree.query_type == "WAIT"
     assert tree.table == 'bar'
-    assert tree.expressions == [
-        {
-            'type': 'function',
-            'name': 'WAIT',
-            'args': ['foo']
-        }
-    ]
+    pprint(tree.expressions)
+    # 1/0
+    assert tree.expressions == 'foo'
 
 
 def test_insert_with_empty_values(parser):
