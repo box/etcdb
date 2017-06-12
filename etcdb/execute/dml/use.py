@@ -1,3 +1,4 @@
+"""Implement USE query."""
 from pyetcd import EtcdKeyNotFound
 
 from etcdb import OperationalError

@@ -1,3 +1,4 @@
+"""Implement SHOW queries."""
 import json
 
 from pyetcd import EtcdKeyNotFound
@@ -97,31 +98,35 @@ def desc_table(etcd_client, tree, db):
 
     fields = json.loads(etcd_result.node['value'])
 
-    for k, v in fields.iteritems():
-        field_type = v['type']
+    for key, value in fields.iteritems():
+        field_type = value['type']
 
-        if v['options']['nullable']:
+        if value['options']['nullable']:
             nullable = 'YES'
         else:
             nullable = 'NO'
 
         indexes = ''
-        if 'primary' in v['options'] and v['options']['primary']:
+        if 'primary' in value['options'] and value['options']['primary']:
             indexes = 'PRI'
 
-        if 'unique' in v['options'] and v['options']['unique']:
+        if 'unique' in value['options'] and value['options']['unique']:
             indexes = 'UNI'
 
         try:
-            default_value = v['options']['default']
+            default_value = value['options']['default']
         except KeyError:
             default_value = ''
 
         extra = ''
-        if 'auto_increment' in v['options'] and v['options']['auto_increment']:
+        if 'auto_increment' in value['options'] \
+                and value['options']['auto_increment']:
             extra = 'auto_increment'
 
-        row = (k, field_type, nullable, indexes, default_value, extra)
-        result_set.add_row(Row(row))
+        result_set.add_row(
+            Row(
+                (key, field_type, nullable, indexes, default_value, extra)
+            )
+        )
 
     return result_set

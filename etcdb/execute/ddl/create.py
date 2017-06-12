@@ -1,9 +1,10 @@
+"""Implement CREATE queries."""
 import json
-from pprint import pprint
 
-from pyetcd import EtcdNodeExist, EtcdKeyNotFound
+from pyetcd import EtcdNodeExist
 
 from etcdb import ProgrammingError, OperationalError
+from etcdb.execute.ddl import database_exists_or_raise
 
 
 def create_database(etcd_client, tree):
@@ -36,17 +37,7 @@ def create_table(etcd_client, tree, db=None):
         or the primary key is NULL-able.
     :raise OperationalError: if database is not selected or table exists.
     """
-    if not db:
-        db = tree.db
-
-    if not db:
-        raise OperationalError('No database selected')
-
-    # Check if database exists
-    try:
-        etcd_client.read('/%s' % db)
-    except EtcdKeyNotFound:
-        raise OperationalError("Unknown database '%s'" % db)
+    database_exists_or_raise(etcd_client, db)
 
     pk_field = None
     for field_name, value in tree.fields.iteritems():
@@ -69,14 +60,3 @@ def create_table(etcd_client, tree, db=None):
                           json.dumps(tree.fields))
     except EtcdNodeExist:
         raise OperationalError("Table '%s' already exists" % tree.table)
-
-
-
-def other():
-    try:
-        table_name = '/%s/%s' % (db, tree.table)
-        self.connection.client.mkdir(table_name)
-        self.connection.client.write(table_name + "/_fields", json.dumps(tree.fields))
-    except EtcdNodeExist as err:
-        raise ProgrammingError("Failed to create table: %s" % err)
-

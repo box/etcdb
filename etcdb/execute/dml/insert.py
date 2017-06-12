@@ -1,3 +1,4 @@
+"""Implement INSERT query."""
 import json
 
 from pyetcd import EtcdKeyNotFound
@@ -36,8 +37,8 @@ def get_pk_field(etcd_client, db, tbl):
     :return: Primary key column.
     :rtype: Column
     """
-    cs = get_table_columns(etcd_client, db, tbl)
-    return cs.primary
+    column_set = get_table_columns(etcd_client, db, tbl)
+    return column_set.primary
 
 
 def insert(etcd_client, tree, db):
@@ -54,17 +55,18 @@ def insert(etcd_client, tree, db):
     """
     # get pk value
     pk_field = get_pk_field(etcd_client, db, tree.table)
-    pk = tree.fields[str(pk_field)]
+    primary_key = tree.fields[str(pk_field)]
 
     try:
         etcd_client.read('/{db}/{tbl}/{pk}'
-                          .format(db=db,
-                                  tbl=tree.table,
-                                  pk=pk))
-        raise IntegrityError("Duplicate entry '%s' for key 'PRIMARY'" % pk)
+                         .format(db=db,
+                                 tbl=tree.table,
+                                 pk=primary_key))
+        raise IntegrityError("Duplicate entry '%s' for key 'PRIMARY'"
+                             % primary_key)
     except EtcdKeyNotFound:
         etcd_client.write('/{db}/{tbl}/{pk}'
                           .format(db=db,
                                   tbl=tree.table,
-                                  pk=pk),
+                                  pk=primary_key),
                           json.dumps(tree.fields))

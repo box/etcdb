@@ -4,7 +4,8 @@ import json
 from etcdb import ProgrammingError
 
 
-class ColumnOptions(object):
+class ColumnOptions(object):  # pylint: disable=too-few-public-methods
+    """ColumnOptions represents column options like NULL-able or not"""
 
     def __init__(self, *options, **kwoptions):
         for dictionary in options:
@@ -40,37 +41,50 @@ class Column(object):
 
     @property
     def name(self):
+        """Column name"""
         return self._colname
 
     @property
     def type(self):
+        """Column type e.g. INT, VARCHAR, etc."""
         return self._coltype
 
     @property
     def auto_increment(self):
+        """True if column is auto_incrementing."""
         return self._options.auto_increment
 
     @property
     def primary(self):
+        """True if column is primary key."""
         return self._options.primary
 
     @property
     def nullable(self):
+        """True if column is NULL-able."""
         return self._options.nullable
 
     @property
     def default(self):
+        """Column default value."""
         return self._options.default
 
     @property
     def unique(self):
+        """True if column is unique key."""
         return self._options.unique
 
     @property
     def print_width(self):
+        """How many symbols client has to spare to print column value.
+         A column name can be short, but its values may be longer.
+         To align column and its values print_width is number of characters
+         a client should allocate for the column name so it will be as lager
+         as the largest columns length value."""
         return self._print_width
 
     def set_print_width(self, width):
+        """Sets print_width."""
         self._print_width = width
 
     def __eq__(self, other):
@@ -101,7 +115,6 @@ class ColumnSet(object):
                                             options=ColumnOptions(
                                                 value['options']
                                             )))
-            pass
         else:
             self._columns = []
             self._column_position = 0
@@ -122,10 +135,12 @@ class ColumnSet(object):
 
     @property
     def empty(self):
+        """True if there are no columns in the ColumnSet"""
         return not len(self._columns)
 
     @property
     def columns(self):
+        """Returns list of Columns"""
         return self._columns
 
     @property
@@ -155,6 +170,7 @@ class ColumnSet(object):
         return self
 
     def next(self):
+        """Return next Column"""
         self._column_position += 1
         try:
             return self._columns[self._column_position - 1]
@@ -171,6 +187,7 @@ class ColumnSet(object):
                     return col
 
     def index(self, column):
+        """Find position of the given column in the set."""
         return self._columns.index(column)
 
 
@@ -189,6 +206,10 @@ class Row(object):
 
     @property
     def row(self):
+        """
+        :return: Return tuple with row values..
+        :rtype: tuple
+        """
         return self._row
 
     def __str__(self):
@@ -204,6 +225,7 @@ class Row(object):
         return self
 
     def next(self):
+        """Return next field in the row."""
         self._field_position += 1
         try:
             return self._row[self._field_position - 1]
@@ -259,6 +281,7 @@ class ResultSet(object):
         return self
 
     def next(self):
+        """Return next row in the result set."""
         self._pos += 1
         try:
             return self.rows[self._pos - 1]
@@ -281,10 +304,12 @@ class ResultSet(object):
 
     @property
     def n_rows(self):
+        """Return number of rows in the result set."""
         return len(self.rows)
 
     @property
     def n_cols(self):
+        """Return number of columns in the result set."""
         return len(self.columns)
 
     def add_row(self, row):

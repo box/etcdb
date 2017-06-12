@@ -6,8 +6,8 @@ import time
 
 from enum import Enum
 
-from .exception import (Error, Warning, InterfaceError, DatabaseError,
-                        DataError,  # pylint: disable=redefined-builtin
+from .exception import (Error, Warning, InterfaceError, DatabaseError, # pylint: disable=redefined-builtin
+                        DataError,
                         OperationalError, IntegrityError, InternalError,
                         ProgrammingError, NotSupportedError)
 

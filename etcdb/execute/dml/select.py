@@ -1,3 +1,4 @@
+"""Implement SELECT query."""
 import json
 
 from etcdb import OperationalError
@@ -25,10 +26,10 @@ def list_table(etcd_client, db, tbl):
 
         nodes = etcd_result.node['nodes']
 
-        for n in nodes:
-            pk_key = n['key']
-            pk = pk_key.replace(table_key + '/', '', 1)
-            pks.append(pk)
+        for node in nodes:
+            pk_key = node['key']
+            primary_key = pk_key.replace(table_key + '/', '', 1)
+            pks.append(primary_key)
 
         pks = sorted(pks)
 
@@ -56,23 +57,23 @@ def prepare_columns(tree):
     return columns
 
 
-def get_row_by_primary_key(etcd_client, db, table, pk):
+def get_row_by_primary_key(etcd_client, db, table, primary_key):
     """
     Read row from etcd by its primary key value.
 
     :param etcd_client:
     :param db:
     :param table:
-    :param pk: Primary key value.
+    :param primary_key: Primary key value.
     :return: Row
     :rtype: Row
     """
     key = "/{db}/{tbl}/{pk}".format(db=db,
                                     tbl=table,
-                                    pk=pk)
+                                    pk=primary_key)
     etcd_response = etcd_client.read(key)
     row = ()
-    for field, value in json.loads(etcd_response.node['value']).iteritems():
+    for _, value in json.loads(etcd_response.node['value']).iteritems():
         row += (value,)
 
     return Row(row)
@@ -94,9 +95,10 @@ def is_group(table_columns, table_row, tree):
         return False
     except TypeError:
         return False
-    
+
 
 def eval_row(table_columns, table_row, tree, result_set):
+    """Find values of a row and store it in result_set"""
     result_row = ()
 
     for select_item in tree.expressions:
@@ -116,6 +118,7 @@ def eval_row(table_columns, table_row, tree, result_set):
 
 
 def execute_select_plain(etcd_client, tree, db):
+    """Execute SELECT that reads rows from table."""
 
     result_columns = prepare_columns(tree)
     result_set = ResultSet(result_columns)
@@ -125,9 +128,10 @@ def execute_select_plain(etcd_client, tree, db):
                                       tree.table)
 
     table_row = None
-    for pk in list_table(etcd_client, db, tree.table):
+    for primary_key in list_table(etcd_client, db, tree.table):
 
-        table_row = get_row_by_primary_key(etcd_client, db, tree.table, pk)
+        table_row = get_row_by_primary_key(etcd_client, db, tree.table,
+                                           primary_key)
 
         if tree.where:
             expr = tree.where
@@ -145,6 +149,8 @@ def execute_select_plain(etcd_client, tree, db):
 
 
 def execute_select_no_table(tree):
+    """Execute SELECT that doesn't read from a table.
+    SELECT VERSION() or similar."""
     result_columns = prepare_columns(tree)
     result_set = ResultSet(result_columns)
 
@@ -168,19 +174,23 @@ def fix_tree_star(tree, etcd_client, db, tbl):
     if tree.expressions == [(("*", None), None)]:
         tree.expressions = []
         for field in get_table_columns(etcd_client, db, tbl):
-            tree.expressions.append((
-                ('bool_primary',
-                 ('predicate',
-                  ('bit_expr',
-                   ('simple_expr',
-                    ('IDENTIFIER', str(field))
-                    )
-                   )
-                  )
-                 ),
-                None))
-    # print(tree.expressions)
-    # 1/0
+            tree.expressions.append(
+                (
+                    (
+                        'bool_primary', (
+                            'predicate', (
+                                'bit_expr', (
+                                    'simple_expr', (
+                                        'IDENTIFIER',
+                                        str(field)
+                                    )
+                                )
+                            )
+                        )
+                    ),
+                    None
+                )
+            )
     return tree
 
 

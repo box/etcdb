@@ -23,6 +23,7 @@ class Connection(object):
 
     @property
     def client(self):
+        """Return etcd client instance"""
         return self._client
 
     @staticmethod

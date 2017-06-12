@@ -10,6 +10,13 @@ from etcdb.sqlparser.parser import SQLParserError
 
 
 class EtdbFunction(object):
+    """EtcdbFunction represents an SQL function.
+
+    :param function_name: python function that implements SQL function.
+    :type function_name: callable
+    :param group: True if the functions is aggregate function
+    :type group: bool
+    :param *args: Arguments to pass to function_name"""
     def __init__(self, function_name, group=False, *args):
         self._function = function_name
         self._group = group
@@ -17,10 +24,12 @@ class EtdbFunction(object):
 
     @property
     def function(self):
+        """Return function name"""
         return self._function
 
     @property
     def group(self):
+        """Return whether the function is aggregate"""
         return self._group
 
     def __call__(self, *args, **kwargs):
@@ -62,6 +71,7 @@ def eval_string(value):
 
 
 def etcdb_version():
+    """Get etcdb version"""
     return __version__
 
 
@@ -77,7 +87,7 @@ def etcdb_count(result_set):
     return len(result_set.rows) + 1
 
 
-def eval_function_call(row, tree):
+def eval_function_call(row, tree):  # pylint: disable=unused-argument
     """Evaluate function call
     :return: tuple with field name and EtdbFunction instance"""
     if tree == 'VERSION':

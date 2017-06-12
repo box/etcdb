@@ -128,8 +128,8 @@ class Cursor(object):
         except SQLParserError as err:
             raise ProgrammingError(err)
 
-        #print(tree)
-        #1/0
+        if not self._db:
+            self._db = tree.db
 
         self._result_set = None
 

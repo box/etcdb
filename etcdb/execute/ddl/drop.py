@@ -1,6 +1,8 @@
+"""Implement DROP queries."""
 from pyetcd import EtcdKeyNotFound
 
 from etcdb import OperationalError
+from etcdb.execute.ddl import database_exists_or_raise
 
 
 def drop_database(etcd_client, tree):
@@ -35,15 +37,7 @@ def drop_table(etcd_client, tree, db=None):
     """
     if not db:
         db = tree.db
-
-    if not db:
-        raise OperationalError('No database selected')
-
-    # Check if database exists
-    try:
-        etcd_client.read('/%s' % db)
-    except EtcdKeyNotFound:
-        raise OperationalError("Unknown database '%s'" % db)
+    database_exists_or_raise(etcd_client, db)
 
     try:
         key = '/%s/%s' % (db, tree.table)
