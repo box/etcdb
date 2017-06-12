@@ -170,6 +170,9 @@ class ColumnSet(object):
                 if col == Column(key):
                     return col
 
+    def index(self, column):
+        return self._columns.index(column)
+
 
 class Row(object):
     """
@@ -207,6 +210,9 @@ class Row(object):
         except IndexError:
             self._field_position = 0
             raise StopIteration()
+
+    def __getitem__(self, key):
+        return self._row[key]
 
 
 class ResultSet(object):
@@ -266,6 +272,12 @@ class ResultSet(object):
         #    return i
         #else:
         #    raise StopIteration()
+
+    def __getitem__(self, key):
+        return self.rows[key]
+
+    def __len__(self):
+        return len(self.rows)
 
     @property
     def n_rows(self):

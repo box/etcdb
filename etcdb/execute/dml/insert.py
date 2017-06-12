@@ -2,8 +2,28 @@ import json
 
 from pyetcd import EtcdKeyNotFound
 
-from etcdb import IntegrityError
+from etcdb import IntegrityError, ProgrammingError
 from etcdb.resultset import ColumnSet
+
+
+def get_table_columns(etcd_client, db, tbl):
+    """
+    Get primary key column for table db.tbl.
+
+    :param etcd_client: Etcd client.
+    :param db: database name.
+    :param tbl: table name.
+    :return: Primary key column.
+    :rtype: ColumnSet
+    :raise ProgrammingError: if table or database doesn't exist
+    """
+    try:
+        response = etcd_client.read('/{db}/{tbl}/_fields'.format(db=db,
+                                                                 tbl=tbl))
+        _fields = response.node['value']
+        return ColumnSet(json.loads(_fields))
+    except EtcdKeyNotFound:
+        raise ProgrammingError("Table %s.%s doesn't exist" % (db, tbl))
 
 
 def get_pk_field(etcd_client, db, tbl):
@@ -16,9 +36,7 @@ def get_pk_field(etcd_client, db, tbl):
     :return: Primary key column.
     :rtype: Column
     """
-    response = etcd_client.read('/{db}/{tbl}/_fields'.format(db=db, tbl=tbl))
-    _fields = response.node['value']
-    cs = ColumnSet(json.loads(_fields))
+    cs = get_table_columns(etcd_client, db, tbl)
     return cs.primary
 
 

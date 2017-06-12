@@ -27,16 +27,10 @@ def p_statement(p):
 
 
 def p_wait_statement(p):
-    """wait_statement : WAIT '(' arg ')' FROM identifier"""
+    """wait_statement : WAIT '(' identifier ')' FROM identifier"""
     _parse_tree.query_type = "WAIT"
     _parse_tree.table = p[6]
-    _parse_tree.expressions = [
-        {
-            'type': 'function',
-            'name': 'WAIT',
-            'args': [p[3]]
-        }
-    ]
+    _parse_tree.expressions = p[3]
 
 
 def p_update_table_statement(p):
@@ -294,7 +288,7 @@ def p_q_STRING_EMPTY(p):
 
 
 def p_select_statement(p):
-    """select_statement : SELECT select_expr_list opt_FROM opt_WHERE opt_ORDER_BY opt_LIMIT"""
+    """select_statement : SELECT select_item_list opt_FROM opt_WHERE opt_ORDER_BY opt_LIMIT"""
     _parse_tree.query_type = "SELECT"
     try:
         _parse_tree.limit = int(p[6])
@@ -375,85 +369,48 @@ def p_opt_FULL(p):
     p[0] = True
 
 
-def p_select_expr_list(p):
-    """select_expr_list : select_expr opt_AS
-        | select_expr opt_AS ',' select_expr_list"""
+def p_select_item_list_select_item(p):
+    """select_item_list : select_item """
+    _parse_tree.expressions.append(p[1])
 
 
-def p_opt_AS(p):
-    """opt_AS :
-        | AS identifier"""
+def p_select_item_list(p):
+    """select_item_list : select_item_list ',' select_item """
+    _parse_tree.expressions.append(p[3])
 
 
-def p_select_one(p):
-    """select_expr : '(' NUMBER ')'"""
+def p_select_item_list_star(p):
+    """select_item_list : '*'"""
+    _parse_tree.expressions.append((
+        ('*', None),
+        None
+    ))
 
 
-def p_select_expr_func(p):
-    """select_expr : function '(' arglist ')'"""
-    func_def = {
-        'type': 'function',
-        'name': p[1].upper()
-    }
-    if p[3]:
-        func_def['args'] = p[3]
-    _parse_tree.expressions.append(func_def)
+def p_select_item(p):
+    """select_item : select_item2 select_alias"""
+    p[0] = (p[1], p[2])
 
 
-def p_select_expr_field(p):
-    """select_expr : identifier"""
-    _parse_tree.expressions.append({
-        'type': 'field',
-        'name': p[1]
-    })
-
-
-def p_select_expr_field_w_table(p):
-    """select_expr : identifier '.' identifier"""
-    _parse_tree.expressions.append({
-        'type': 'field',
-        'table_name': p[1],
-        'name': p[3]
-    })
-
-
-def p_select_expr_variable(p):
-    """select_expr : '@' '@' STRING"""
-    _parse_tree.expressions.append({
-        'type': 'variable',
-        'name': p[3].upper()
-    })
-
-
-def p_arglist_empty(p):
-    """arglist : """
-    p[0] = []
-
-
-def p_arglist_one(p):
-    """arglist : arg"""
-    p[0] = [p[1]]
-
-
-def p_arglist_many(p):
-    """arglist : arg ',' arglist"""
-    p[0] = p[3].append[p[1]]
-
-
-def p_function(p):
-    """function : VERSION
-        | COUNT"""
+def p_select_item2(p):
+    """select_item2 : table_wild
+        | expr """
     p[0] = p[1]
 
 
-def p_agr(p):
-    """arg : STRING"""
-    p[0] = p[1]
+def p_select_alias_empty(p):
+    """select_alias : """
+    p[0] = None
 
 
-def p_agr_star(p):
-    """arg : '*'"""
-    p[0] = '*'
+def p_select_alias(p):
+    """select_alias : AS identifier"""
+    p[0] = p[2]
+
+
+def p_table_wild(p):
+    """table_wild : identifier '.' '*' """
+    p[0] = ("*", p[1])
 
 
 def p_opt_WHERE_empty(p):
@@ -530,14 +487,51 @@ def p_simple_expr_identifier_full(p):
     p[0] = ('IDENTIFIER', p[1] + '.' + p[3])
 
 
-def p_simple_expr_string(p):
-    """simple_expr : STRING_VALUE"""
-    p[0] = ('STRING', p[1])
+#def p_simple_expr_string(p):
+#    """simple_expr : STRING_VALUE"""
+#    p[0] = ('STRING', p[1])
 
 
 def p_simple_expr_parent(p):
     """simple_expr : '(' expr ')'"""
     p[0] = ('expr', p[2])
+
+
+def p_simple_expr_variable(p):
+    """simple_expr : variable"""
+    p[0] = ('variable', p[1])
+
+
+def p_variable(p):
+    """variable : '@' '@' STRING"""
+    p[0] = p[3]
+
+
+def p_simple_expr_literal(p):
+    """simple_expr : literal"""
+    p[0] = ('literal', p[1])
+
+
+def p_literal(p):
+    """literal : q_STRING
+        | NUMBER
+        | STRING_VALUE"""
+    p[0] = p[1]
+
+
+def p_simple_expr_function_call(p):
+    """simple_expr : function_call"""
+    p[0] = ('function_call', p[1])
+
+
+def p_function_call_version(p):
+    """function_call : VERSION '(' ')'"""
+    p[0] = 'VERSION'
+
+
+def p_function_call_count_star(p):
+    """function_call : COUNT '(' '*' ')'"""
+    p[0] = 'COUNT'
 
 
 def p_error(t):

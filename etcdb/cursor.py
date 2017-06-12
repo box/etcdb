@@ -12,6 +12,7 @@ from etcdb.eval_expr import eval_expr
 from etcdb.execute.ddl.create import create_database, create_table
 from etcdb.execute.ddl.drop import drop_database, drop_table
 from etcdb.execute.dml.insert import insert
+from etcdb.execute.dml.select import execute_select
 from etcdb.execute.dml.show import show_databases, show_tables, desc_table
 from etcdb.execute.dml.use import use_database
 from etcdb.sqlparser.parser import SQLParser, SQLParserError
@@ -160,11 +161,9 @@ class Cursor(object):
             insert(self.connection.client, tree,
                    db=self._db)
 
-
-        # db = self._get_current_db(tree)
-
-        # if tree.query_type == 'SELECT':
-        #    self._column_names, self._rows = self._execute_select(tree)
+        if tree.query_type == 'SELECT':
+            self._result_set = execute_select(self.connection.client, tree,
+                                              db=self._db)
         #elif tree.query_type == "INSERT":
         #    self._execute_insert(tree)
         #elif tree.query_type == "UPDATE":

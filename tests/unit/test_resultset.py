@@ -327,3 +327,31 @@ def test_column_set_primary():
     cs = ColumnSet(columns=fields)
     assert cs.primary == Column('id')
     assert cs.primary.type == 'INT'
+
+
+def test_column_set_index():
+    cs = ColumnSet()
+    cs.add(Column('id'))
+    cs.add(Column('name'))
+
+    assert cs.index(Column('id')) == 0
+    assert cs.index(Column('name')) == 1
+
+
+def test_row_indexing():
+    row = Row(('a', 'b', 'c'))
+    assert row[0] == 'a'
+    assert row[1] == 'b'
+    assert row[2] == 'c'
+
+
+def test_result_set_indexable():
+    cs = ColumnSet().add(Column('foo')).add(Column('bar'))
+    rs = ResultSet(cs,
+                   [
+                       Row(('foo_value1', 'bar_value1')),
+                       Row(('foo_value2', 'bar_value2'))
+                   ])
+
+    assert rs[0] == Row(('foo_value1', 'bar_value1'))
+    assert rs[1] == Row(('foo_value2', 'bar_value2'))
