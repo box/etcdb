@@ -164,15 +164,6 @@ class Cursor(object):
         if tree.query_type == 'SELECT':
             self._result_set = execute_select(self.connection.client, tree,
                                               db=self._db)
-        #elif tree.query_type == "INSERT":
-        #    self._execute_insert(tree)
-        #elif tree.query_type == "UPDATE":
-        #    return self._execute_update(tree)
-        #elif tree.query_type == "WAIT":
-        #    self._column_names, self._rows = self._execute_wait(tree)
-
-        #self._col_infos = self._update_columns(self._column_names, self._rows)
-
 
     @staticmethod
     def executemany(operation, **kwargs):
@@ -184,7 +175,7 @@ class Cursor(object):
         """Fetch the next row of a query result set, returning a single sequence,
         or None when no more data is available."""
         try:
-            return self._result_set.next()
+            return tuple(self._result_set.next())
         except (StopIteration, AttributeError):
             return None
 
@@ -203,8 +194,11 @@ class Cursor(object):
         (e.g. a list of tuples). Note that the cursor's arraysize attribute can affect
         the performance of this operation."""
 
-        result = self._rows
-        self._rows = ()
+        result = ()
+        if len(self._result_set)> 0:
+            for row in self._result_set:
+                result += (tuple(row), )
+            self._result_set.rows = []
         return result
 
     @staticmethod
