@@ -11,6 +11,7 @@ from etcdb import ProgrammingError, OperationalError, LOCK_WAIT_TIMEOUT
 from etcdb.eval_expr import eval_expr
 from etcdb.execute.ddl.create import create_database, create_table
 from etcdb.execute.ddl.drop import drop_database, drop_table
+from etcdb.execute.dml.delete import execute_delete
 from etcdb.execute.dml.insert import insert
 from etcdb.execute.dml.select import execute_select
 from etcdb.execute.dml.show import show_databases, show_tables, desc_table
@@ -170,8 +171,11 @@ class Cursor(object):
             self._result_set = execute_select(self.connection.client, tree,
                                               db=self._db)
         elif tree.query_type == "UPDATE":
-            self._rowcount = execute_update(self.connection.client, tree, db=self._db)
-
+            self._rowcount = execute_update(self.connection.client, tree,
+                                            db=self._db)
+        elif tree.query_type == "DELETE":
+            self._rowcount = execute_delete(self.connection.client, tree,
+                                            db=self._db)
         if self._result_set is not None:
             self._rowcount = self._result_set.n_rows
 

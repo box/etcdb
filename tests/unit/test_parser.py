@@ -1130,8 +1130,6 @@ def test_update_with_where(parser):
     tree = parser.parse(query)
     assert tree.query_type == "UPDATE"
     assert tree.table == 'foo'
-    # pprint(tree.expressions)
-    # 1/0
     assert tree.expressions == [('body',
                                  ('bool_primary',
                                   ('predicate', ('bit_expr', ('simple_expr', ('literal', 'aaa')))))),
@@ -1142,3 +1140,14 @@ def test_update_with_where(parser):
                           ('=',
                            ('predicate', ('bit_expr', ('simple_expr', ('IDENTIFIER', 'foo.name')))),
                            ('bit_expr', ('simple_expr', ('literal', 'bbb')))))
+
+
+def test_delete(parser):
+    query = "DELETE FROM foo WHERE id = 'bar'"
+    tree = parser.parse(query)
+    assert tree.query_type == "DELETE"
+    assert tree.table == 'foo'
+    assert tree.where == ('bool_primary',
+                          ('=',
+                           ('predicate', ('bit_expr', ('simple_expr', ('IDENTIFIER', 'id')))),
+                           ('bit_expr', ('simple_expr', ('literal', 'bar')))))

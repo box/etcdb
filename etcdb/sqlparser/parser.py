@@ -18,6 +18,7 @@ def p_statement(p):
         | commit_statement
         | set_statement
         | insert_statement
+        | delete_statement
         | drop_database_statement
         | drop_table_statement
         | desc_table_statement
@@ -554,6 +555,12 @@ def p_function_call_version(p):
 def p_function_call_count_star(p):
     """function_call : COUNT '(' '*' ')'"""
     p[0] = 'COUNT'
+
+
+def p_delete_statement(p):
+    """delete_statement : DELETE FROM identifier opt_WHERE"""
+    _parse_tree.query_type = 'DELETE'
+    _parse_tree.table = p[3]
 
 
 def p_error(t):

@@ -1,0 +1,32 @@
+"""
+Implement DELETE query.
+"""
+from etcdb.eval_expr import eval_expr
+from etcdb.execute.dml.insert import get_table_columns
+from etcdb.execute.dml.select import list_table, get_row_by_primary_key
+
+
+def _delete_key(etcd_client, key):
+    etcd_client.delete(key)
+
+
+def execute_delete(etcd_client, tree, db):
+    """Execute DELETE query"""
+    row_count = 0
+    for primary_key in list_table(etcd_client, db, tree.table):
+
+        table_row = get_row_by_primary_key(etcd_client, db, tree.table,
+                                           primary_key)
+        table_columns = get_table_columns(etcd_client, db, tree.table)
+        key = "/{db}/{tbl}/{pk}".format(db=db, tbl=tree.table, pk=primary_key)
+
+        if tree.where:
+            expr = tree.where
+            if eval_expr((table_columns, table_row), expr)[1]:
+                _delete_key(etcd_client, key)
+            row_count += 1
+        else:
+            _delete_key(etcd_client, key)
+            row_count += 1
+
+    return row_count
