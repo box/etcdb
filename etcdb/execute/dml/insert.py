@@ -70,3 +70,4 @@ def insert(etcd_client, tree, db):
                                   tbl=tree.table,
                                   pk=primary_key),
                           json.dumps(tree.fields))
+        return 1

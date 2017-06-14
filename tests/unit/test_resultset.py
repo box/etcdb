@@ -217,8 +217,6 @@ def test_result_set_iterable():
     with pytest.raises(StopIteration):
         rs.next()
 
-    assert rs.next() == Row(('foo_value1', 'bar_value1'))
-    assert rs.next() == Row(('foo_value2', 'bar_value2'))
     with pytest.raises(StopIteration):
         rs.next()
 
@@ -355,3 +353,19 @@ def test_result_set_indexable():
 
     assert rs[0] == Row(('foo_value1', 'bar_value1'))
     assert rs[1] == Row(('foo_value2', 'bar_value2'))
+
+
+@pytest.mark.parametrize('row, width', [
+    (
+        Row(('1', )),
+        2
+    ),
+    (
+        Row((1, )),
+        2
+    )
+])
+def test_result_set_update_print_width(row, width):
+    rs = ResultSet(ColumnSet().add(Column('id')))
+    rs._update_print_width(row)
+    assert rs.columns[0].print_width == width

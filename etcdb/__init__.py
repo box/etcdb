@@ -4,6 +4,9 @@ PEP-249 implementation for etcd
 """
 import time
 
+import logging
+from logging.handlers import WatchedFileHandler
+
 from enum import Enum
 
 from .exception import (Error, Warning, InterfaceError, DatabaseError, # pylint: disable=redefined-builtin

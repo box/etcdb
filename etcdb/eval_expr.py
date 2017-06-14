@@ -9,7 +9,7 @@ from etcdb.resultset import Column
 from etcdb.sqlparser.parser import SQLParserError
 
 
-class EtdbFunction(object):
+class EtcdbFunction(object):
     """EtcdbFunction represents an SQL function.
 
     :param function_name: python function that implements SQL function.
@@ -34,6 +34,18 @@ class EtdbFunction(object):
 
     def __call__(self, *args, **kwargs):
         return self._function(*args, **kwargs)
+
+    def __eq__(self, other):
+        return all(
+            (
+                isinstance(other, EtcdbFunction),
+                self.function == other.function,
+                self.group == other.group
+            )
+        )
+
+    def __ne__(self, other):
+        return not self.__eq__(other)
 
 
 def eval_identifier(row, identifier):
@@ -67,7 +79,7 @@ def eval_identifier(row, identifier):
 
 def eval_string(value):
     """Evaluate string token"""
-    return "'%s'" % value, value
+    return '%s' % value, value
 
 
 def etcdb_version():
@@ -84,18 +96,18 @@ def etcdb_count(result_set):
     :return: number of rows in ResultSet
     :rtype: int
     """
-    return len(result_set.rows) + 1
+    return len(result_set.rows)
 
 
 def eval_function_call(row, tree):  # pylint: disable=unused-argument
     """Evaluate function call
-    :return: tuple with field name and EtdbFunction instance"""
+    :return: tuple with field name and EtcdbFunction instance"""
     if tree == 'VERSION':
-        # func = EtdbFunction(version, group=False)
-        return "VERSION()", EtdbFunction(etcdb_version, group=False)
+        # func = EtcdbFunction(version, group=False)
+        return "VERSION()", EtcdbFunction(etcdb_version, group=False)
     if tree == 'COUNT':
-        # func = EtdbFunction(version, group=False)
-        return "COUNT(*)", EtdbFunction(etcdb_count, group=True)
+        # func = EtcdbFunction(version, group=False)
+        return "COUNT(*)", EtcdbFunction(etcdb_count, group=True)
     raise NotImplementedError('Unknown function %s' % tree)
 
 
@@ -107,6 +119,8 @@ def eval_simple_expr(row, tree):
         return eval_string(tree[1])
     elif tree[0] == 'function_call':
         return eval_function_call(row, tree[1])
+    elif tree[0] == 'expr':
+        return eval_expr(row, tree[1])
     else:
         raise SQLParserError('%s is not implemented' % tree[0])
 
@@ -131,7 +145,6 @@ def eval_bool_primary(row, tree): # pylint: disable=too-many-return-statements
     """Evaluate bool_primary"""
 
     if tree[0] == 'IS NULL':
-
         bool_primary1 = eval_bool_primary(row, tree[1])
         return "%s IS NULL" % bool_primary1[0], \
                bool_primary1[1] is None
@@ -220,6 +233,12 @@ def eval_expr(row, tree):
         return (
             '%s AND %s' % (expr1[0], expr2[0]),
             expr1[1] and expr2[1]
+        )
+    elif tree[0] == 'NOT':
+        expr1 = eval_expr(row, tree[1])
+        return (
+            'NOT %s' % expr1[0],
+            not expr1[1]
         )
     elif tree[0] == 'bool_primary':
         return eval_bool_primary(row, tree[1])

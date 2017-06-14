@@ -2,7 +2,7 @@
 import json
 
 from etcdb import OperationalError
-from etcdb.eval_expr import eval_expr, EtdbFunction, etcdb_version, etcdb_count
+from etcdb.eval_expr import eval_expr, EtcdbFunction, etcdb_version, etcdb_count
 from etcdb.execute.dml.insert import get_table_columns
 from etcdb.resultset import ResultSet, ColumnSet, Column, Row
 
@@ -40,20 +40,23 @@ def list_table(etcd_client, db, tbl):
 
 def prepare_columns(tree):
     """
-    Generate ColumnSet for query result.
+    Generate ColumnSet for query result. ColumnsSet doesn't include
+    a grouping function.
 
     :return: Columns of the query result.
     :rtype: ColumnSet
     """
     columns = ColumnSet()
     for select_item in tree.expressions:
-        expr = select_item[0]
-        alias = select_item[1]
+
+        expr, alias = select_item
+
+        colname, colvalue = eval_expr(None, tree=expr)
         if alias:
             colname = alias
-        else:
-            colname = eval_expr(None, tree=expr)[0]
+
         columns.add(Column(colname))
+
     return columns
 
 
@@ -79,26 +82,44 @@ def get_row_by_primary_key(etcd_client, db, table, primary_key):
     return Row(row)
 
 
-def is_group(table_columns, table_row, tree):
-    """True if resultset should be groupped"""
+def group_function(table_columns, table_row, tree):
+    """True if resultset should be grouped
+
+    :return: Grouping function or None and its position.
+    :rtype: tuple(EtcdbFunction, int)"""
 
     try:
 
+        group_position = 0
         for select_item in tree.expressions:
             expr = select_item[0]
             expr_value = eval_expr((table_columns, table_row),
                                    tree=expr)[1]
 
-            if isinstance(expr_value, EtdbFunction):
+            if isinstance(expr_value, EtcdbFunction):
+
                 if expr_value.group:
-                    return True
-        return False
+                    return expr_value, group_position
+            group_position += 1
+        return None, None
     except TypeError:
-        return False
+        return None, None
 
 
 def eval_row(table_columns, table_row, tree, result_set):
-    """Find values of a row and store it in result_set"""
+    """Find values of a row. table_columns are fields in the table.
+    The result columns is taken from tree.expressions.
+
+    :param table_columns: Columns in the table row.
+    :type table_columns: ColumnSet
+    :param table_row: Input row.
+    :type table_row: Row
+    :param tree: Parsing tree.
+    :type tree: SQLTree
+    :param result_set: Some functions like COUNT(*) need result set to
+        calculate return value.
+    :type result_set: ResultSet
+    """
     result_row = ()
 
     for select_item in tree.expressions:
@@ -106,15 +127,31 @@ def eval_row(table_columns, table_row, tree, result_set):
         expr_value = eval_expr((table_columns, table_row),
                                tree=expr)[1]
 
-        if isinstance(expr_value, EtdbFunction):
-            if expr_value.function == etcdb_version:
-                result_row += (expr_value(),)
-            if expr_value.function == etcdb_count:
-                result_row += (str(expr_value(result_set)),)
-        else:
-            result_row += (expr_value, )
+        result_row += (expr_value, )
 
     return result_row
+
+
+def group_result_set(func, result_set, table_row, tree, pos):
+    """Apply a group function to result set and return an aggregated row.
+
+    :param func: Aggregation function.
+    :type func: callable
+    :param result_set: Result set to aggregate.
+    :type result_set: ResultSet
+    :param table_row: Table row to base aggregated row on.
+    :type table_row: Row
+    :param tree: Parsing tree.
+    :type tree: SQLTree
+    :param pos: Aggregate function position in the resulting row.
+    :type pos: int
+    :return: Result set with aggregated row.
+    :rtype: ResultSet"""
+    group_value = func(result_set)
+    row = list(eval_row(result_set.columns, table_row, tree, result_set))
+    row[pos] = group_value
+    row = Row(tuple(row))
+    return ResultSet(prepare_columns(tree), [row])
 
 
 def execute_select_plain(etcd_client, tree, db):
@@ -123,11 +160,9 @@ def execute_select_plain(etcd_client, tree, db):
     result_columns = prepare_columns(tree)
     result_set = ResultSet(result_columns)
 
-    table_columns = get_table_columns(etcd_client,
-                                      db,
-                                      tree.table)
+    table_columns = get_table_columns(etcd_client, db, tree.table)
 
-    table_row = None
+    last_row = None
     for primary_key in list_table(etcd_client, db, tree.table):
 
         table_row = get_row_by_primary_key(etcd_client, db, tree.table,
@@ -138,14 +173,18 @@ def execute_select_plain(etcd_client, tree, db):
             if eval_expr((table_columns, table_row), expr)[1]:
                 row = eval_row(table_columns, table_row, tree, result_set)
                 result_set.add_row(row)
+                last_row = table_row
         else:
             row = eval_row(table_columns, table_row, tree, result_set)
             result_set.add_row(row)
+            last_row = table_row
 
-    if is_group(table_columns, table_row, tree):
-        return ResultSet(result_columns, [result_set[len(result_set) - 1]])
-    else:
-        return result_set
+    g_function, pos = group_function(table_columns, last_row, tree)
+    if g_function:
+        result_set = group_result_set(g_function, result_set, last_row,
+                                      tree, pos)
+
+    return result_set
 
 
 def execute_select_no_table(tree):

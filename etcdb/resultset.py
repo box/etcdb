@@ -264,8 +264,11 @@ class ResultSet(object):
         self._pos = 0
 
     def __eq__(self, other):
-        return all((self.columns == other.columns,
-                    self.rows == other.rows))
+        try:
+            return all((self.columns == other.columns,
+                        self.rows == other.rows))
+        except AttributeError:
+            return False
 
     def __ne__(self, other):
         return not self.__eq__(other)
@@ -286,21 +289,18 @@ class ResultSet(object):
         try:
             return self.rows[self._pos - 1]
         except IndexError:
-            self._pos = 0
             raise StopIteration()
-
-        #if self.i < self.n:
-        #    i = self.i
-        #    self.i += 1
-        #    return i
-        #else:
-        #    raise StopIteration()
 
     def __getitem__(self, key):
         return self.rows[key]
 
     def __len__(self):
         return len(self.rows)
+
+    def rewind(self):
+        """Move internal records pointer to the beginning of the result set.
+        After this call .fetchone() will start returning rows again."""
+        self._pos = 0
 
     @property
     def n_rows(self):
@@ -328,6 +328,6 @@ class ResultSet(object):
     def _update_print_width(self, row):
         i = 0
         for field in row:
-            if len(field) > self.columns[i].print_width:
-                self.columns[i].set_print_width(len(field))
+            if len(str(field)) > self.columns[i].print_width:
+                self.columns[i].set_print_width(len(str(field)))
             i += 1

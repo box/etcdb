@@ -14,7 +14,9 @@ from etcdb.execute.ddl.drop import drop_database, drop_table
 from etcdb.execute.dml.insert import insert
 from etcdb.execute.dml.select import execute_select
 from etcdb.execute.dml.show import show_databases, show_tables, desc_table
+from etcdb.execute.dml.update import execute_update
 from etcdb.execute.dml.use import use_database
+from etcdb.log import LOG
 from etcdb.sqlparser.parser import SQLParser, SQLParserError
 
 
@@ -56,7 +58,7 @@ class Cursor(object):
 
     @property
     def rowcount(self):
-        return self._result_set.n_rows
+        return self._rowcount
 
     """This read-only attribute specifies the number of rows that the last .execute*() produced
     (for DQL statements like SELECT ) or affected (for DML statements like UPDATE or INSERT )."""
@@ -78,6 +80,7 @@ class Cursor(object):
         self._db = connection.db
         self._timeout = connection.timeout
         self.lastrowid = None
+        self._rowcount = 0
 
     @property
     def n_cols(self):
@@ -123,6 +126,8 @@ class Cursor(object):
 
         query = self.morgify(query, args)
 
+        LOG.debug('Executing: %s', query)
+
         try:
             tree = self._sql_parser.parse(query)
         except SQLParserError as err:
@@ -132,6 +137,7 @@ class Cursor(object):
             self._db = tree.db
 
         self._result_set = None
+        self._rowcount = 0
 
         if tree.query_type == "SHOW_DATABASES":
             self._result_set = show_databases(self.connection.client)
@@ -158,12 +164,16 @@ class Cursor(object):
             self._result_set = desc_table(self.connection.client, tree,
                                           db=self._db)
         elif tree.query_type == "INSERT":
-            insert(self.connection.client, tree,
-                   db=self._db)
-
-        if tree.query_type == 'SELECT':
+            self._rowcount = insert(self.connection.client, tree,
+                                    db=self._db)
+        elif tree.query_type == 'SELECT':
             self._result_set = execute_select(self.connection.client, tree,
                                               db=self._db)
+        elif tree.query_type == "UPDATE":
+            self._rowcount = execute_update(self.connection.client, tree, db=self._db)
+
+        if self._result_set is not None:
+            self._rowcount = self._result_set.n_rows
 
     @staticmethod
     def executemany(operation, **kwargs):
@@ -259,7 +269,6 @@ class Cursor(object):
             return columns, rows
         finally:
             self._release_read_lock(db, tbl, lock_id)
-
 
     def _eval_function(self, name, db=None, tbl=None):
         if name == "VERSION":

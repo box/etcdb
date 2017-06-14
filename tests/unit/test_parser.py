@@ -1088,3 +1088,57 @@ def test_insert_with_empty_values(parser):
         'id': '1',
         'name': ''
     }
+
+
+def test_where_and_not(parser):
+    query = "SELECT (1) AS `a` FROM `bar` " \
+            "WHERE (`bar`.`name` = 'foo' " \
+            "AND NOT (`bar`.`name` = 'foo')) LIMIT 1"
+    tree = parser.parse(query)
+    assert tree.query_type == 'SELECT'
+    assert tree.table == 'bar'
+    assert tree.where == ('bool_primary',
+                          ('predicate',
+                           ('bit_expr',
+                            ('simple_expr',
+                             ('expr',
+                              ('AND',
+                               ('bool_primary',
+                                ('=',
+                                 ('predicate',
+                                  ('bit_expr',
+                                   ('simple_expr', ('IDENTIFIER', 'bar.name')))),
+                                 ('bit_expr', ('simple_expr', ('literal', 'foo'))))),
+                               ('NOT',
+                                ('bool_primary',
+                                 ('predicate',
+                                  ('bit_expr',
+                                   ('simple_expr',
+                                    ('expr',
+                                     ('bool_primary',
+                                      ('=',
+                                       ('predicate',
+                                        ('bit_expr',
+                                         ('simple_expr',
+                                          ('IDENTIFIER', 'bar.name')))),
+                                       ('bit_expr',
+                                        ('simple_expr', ('literal', 'foo')))))))))))))))))
+
+
+def test_update_with_where(parser):
+    query = "UPDATE `foo` SET `body` = 'aaa', name='ccc' WHERE `foo`.`name` = 'bbb'"
+    tree = parser.parse(query)
+    assert tree.query_type == "UPDATE"
+    assert tree.table == 'foo'
+    # pprint(tree.expressions)
+    # 1/0
+    assert tree.expressions == [('body',
+                                 ('bool_primary',
+                                  ('predicate', ('bit_expr', ('simple_expr', ('literal', 'aaa')))))),
+                                ('name',
+                                 ('bool_primary',
+                                  ('predicate', ('bit_expr', ('simple_expr', ('literal', 'ccc'))))))]
+    assert tree.where == ('bool_primary',
+                          ('=',
+                           ('predicate', ('bit_expr', ('simple_expr', ('IDENTIFIER', 'foo.name')))),
+                           ('bit_expr', ('simple_expr', ('literal', 'bbb')))))

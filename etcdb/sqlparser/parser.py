@@ -34,9 +34,26 @@ def p_wait_statement(p):
 
 
 def p_update_table_statement(p):
-    """update_table_statement : UPDATE identifier SET identifier '=' STRING_VALUE opt_WHERE """
+    """update_table_statement : UPDATE identifier SET col_expr_list opt_WHERE """
     _parse_tree.query_type = "UPDATE"
     _parse_tree.table = p[2]
+    _parse_tree.expressions = p[4]
+
+
+def p_col_expr_list_one(p):
+    """col_expr_list : col_expr"""
+    p[0] = [p[1]]
+
+
+def p_col_expr_list(p):
+    """col_expr_list : col_expr_list ',' col_expr"""
+    p[1].append(p[3])
+    p[0] = p[1]
+
+
+def p_col_expr(p):
+    """col_expr :  identifier '=' expr"""
+    p[0] = (p[1], p[3])
 
 
 def p_desc_table_statement(p):
@@ -430,6 +447,11 @@ def p_expr_OR(p):
 def p_expr_AND(p):
     """expr : expr AND expr"""
     p[0] = ('AND', p[1], p[3])
+
+
+def p_expr_NOT(p):
+    """expr : NOT expr"""
+    p[0] = ('NOT', p[2])
 
 
 def p_expr_bool_primary(p):
