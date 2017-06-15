@@ -1151,3 +1151,29 @@ def test_delete(parser):
                           ('=',
                            ('predicate', ('bit_expr', ('simple_expr', ('IDENTIFIER', 'id')))),
                            ('bit_expr', ('simple_expr', ('literal', 'bar')))))
+
+
+def test_delete_with_in(parser):
+    query = "DELETE FROM `foo` WHERE `foo`.`bar` IN ('xyz', 'abc')"
+    tree = parser.parse(query)
+    assert tree.query_type == "DELETE"
+    assert tree.table == 'foo'
+    pprint(tree.where)
+    assert tree.where == ('bool_primary',
+                          ('predicate',
+                           ('IN',
+
+                            ('simple_expr', ('IDENTIFIER', 'foo.bar')),
+
+                            [
+                                 ('bool_primary',
+                                  ('predicate', ('bit_expr', ('simple_expr', ('literal', 'xyz'))))),
+
+                                 ('bool_primary',
+                                  ('predicate', ('bit_expr', ('simple_expr', ('literal', 'abc')))))
+                            ]
+
+                            )
+
+                           )
+                          )

@@ -495,6 +495,26 @@ def p_predicate(p):
     p[0] = ('bit_expr', p[1])
 
 
+def p_predicate_in(p):
+    """predicate : bit_expr IN '(' list_expr ')'"""
+    p[0] = (
+        'IN',
+        p[1],
+        p[4]
+    )
+
+
+def p_list_expr_one(p):
+    """list_expr : expr"""
+    p[0] = [p[1]]
+
+
+def p_list_expr(p):
+    """list_expr : list_expr ',' expr"""
+    p[1].append(p[3])
+    p[0] = p[1]
+
+
 def p_bit_expr(p):
     """bit_expr : simple_expr"""
     p[0] = ('simple_expr', p[1])

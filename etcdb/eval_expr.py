@@ -137,6 +137,13 @@ def eval_predicate(row, tree):
     """Evaluate predicate"""
     if tree[0] == 'bit_expr':
         return eval_bit_expr(row, tree[1])
+    if tree[0] == 'IN':
+        simple_expr = eval_simple_expr(row, tree[1][1])
+        for expr_tree in tree[2]:
+            expr_value = eval_expr(row, expr_tree)
+            if expr_value[1] == simple_expr[1]:
+                return '%s IN (%s)' % (simple_expr[0], expr_value[0]), True
+        return '%s IN (expr)' % (simple_expr[0], ), False
     else:
         raise SQLParserError('%s is not implemented' % tree[0])
 
