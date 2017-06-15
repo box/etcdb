@@ -4,9 +4,7 @@ import inspect
 
 from pyetcd.client import Client
 
-# from etcdb import NotSupportedError
 from etcdb import NotSupportedError
-from etcdb.converters import conversions
 from etcdb.cursor import Cursor
 
 
@@ -17,18 +15,21 @@ class Connection(object):
 
     def __init__(self, timeout=1, **kwargs):
 
-        self._client = Client(**self._santize_pyetcd_kwargs(kwargs,
-                                                            inspect.getargspec(Client.__init__).args))
-        self.client = self._client
-        self.encoders = conversions
+        self._client = Client(**self._santize_pyetcd_kwargs(kwargs))
         if 'db' in kwargs:
             self._db = kwargs['db']
         self._timeout = timeout
         self._cursor = Cursor(self)
 
+    @property
+    def client(self):
+        """Return etcd client instance"""
+        return self._client
+
     @staticmethod
     def close():
-        """Close the connection now (rather than whenever .__del__() is called). """
+        """Close the connection now (rather than whenever .
+        __del__() is called). """
         pass
 
     @staticmethod
@@ -38,7 +39,8 @@ class Connection(object):
 
     @staticmethod
     def rollback():
-        """This method is optional since not all databases provide transaction support."""
+        """This method is optional since not all databases provide
+        transaction support."""
         raise NotSupportedError('Transactions are not supported by etcd')
 
     def cursor(self):
@@ -51,14 +53,14 @@ class Connection(object):
         pass
 
     @staticmethod
-    def _santize_pyetcd_kwargs(kwargs, allowed_kwargs):
+    def _santize_pyetcd_kwargs(kwargs):
         """
         Strips out keyword arguments that aren't listed in allowed_kwargs.
 
         :param kwargs: input dictionary with keyword arguments.
-        :param allowed_kwargs: list of allowed keyword arguments.
         :return: dictionary without non-allowed keys.
         """
+        allowed_kwargs = inspect.getargspec(Client.__init__).args
         args = {}
         for arg in kwargs:
             if arg in allowed_kwargs:

@@ -4,9 +4,13 @@ PEP-249 implementation for etcd
 """
 import time
 
+import logging
+from logging.handlers import WatchedFileHandler
+
 from enum import Enum
 
-from .exception import (Error, Warning, InterfaceError, DatabaseError, DataError,  # pylint: disable=redefined-builtin
+from .exception import (Error, Warning, InterfaceError, DatabaseError, # pylint: disable=redefined-builtin
+                        DataError,
                         OperationalError, IntegrityError, InternalError,
                         ProgrammingError, NotSupportedError)
 
@@ -17,7 +21,7 @@ from .etcdtimestamp import EtcdTimestamp
 
 __author__ = 'Box TechOps Database Team'
 __email__ = 'oss@box.com'
-__version__ = '1.2.1'
+__version__ = '1.3.0'
 
 
 def _split_version(version):
@@ -118,7 +122,8 @@ def Time(hour, minute, second):  # pylint: disable=invalid-name
 
 
 def Binary(string):  # pylint: disable=invalid-name
-    """This function constructs an object capable of holding a binary (long) string value. """
+    """This function constructs an object capable of holding
+    a binary (long) string value. """
     return EtcdString(string)
 
 from .connection import Connect  # pylint: disable=wrong-import-position
