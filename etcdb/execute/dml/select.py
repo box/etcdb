@@ -58,26 +58,44 @@ def prepare_columns(tree):
     return columns
 
 
-def get_row_by_primary_key(etcd_client, db, table, primary_key):
+def get_row_by_primary_key(etcd_client, db, table, primary_key,
+                           wait=False, wait_index=None):
     """
     Read row from etcd by its primary key value.
 
     :param etcd_client:
+    :type etcd_client: Client
     :param db:
     :param table:
     :param primary_key: Primary key value.
+    :param wait: If True it will wait for a change in the key
+    :type wait: bool
+    :param wait_index: When waiting you can specify index to wait for.
+    :type wait_index: int
     :return: Row
     :rtype: Row
     """
     key = "/{db}/{tbl}/{pk}".format(db=db,
                                     tbl=table,
                                     pk=primary_key)
-    etcd_response = etcd_client.read(key)
+    kwargs = {}
+    if wait:
+        kwargs['wait'] = True
+        if wait_index:
+            kwargs['waitIndex'] = wait_index
+    if kwargs:
+        etcd_response = etcd_client.read(key, **kwargs)
+    else:
+        etcd_response = etcd_client.read(key)
     row = ()
     for _, value in json.loads(etcd_response.node['value']).iteritems():
         row += (value,)
 
-    return Row(row)
+    try:
+        etcd_index = etcd_response.x_etcd_index
+    except AttributeError:
+        etcd_index = 0
+    return Row(row, etcd_index=etcd_index)
 
 
 def group_function(table_columns, table_row, tree):
