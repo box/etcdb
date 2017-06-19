@@ -68,7 +68,7 @@ test: ## run tests quickly with the default Python
 	py.test --cov=etcdb --cov-report term-missing tests/unit
 
 test-functional: ## run functional tests. Vagrant machines must run.
-	py.test -v tests/functional
+	py.test -xv tests/functional
 
 
 test-all: ## run tests on every Python version with tox
@@ -99,3 +99,16 @@ dist: clean ## builds source and wheel package
 
 install: clean ## install the package to the active Python's site-packages
 	python setup.py install
+
+docker-start:
+	@docker run \
+		-v $(shell pwd):/etcdb \
+		-it \
+		ubuntu:xenial \
+		/bin/bash -l
+
+docker-test-func:
+	@docker run \
+		-v $(shell pwd):/etcdb \
+		ubuntu:xenial \
+		/bin/bash -l /etcdb/support/run_func_test.sh

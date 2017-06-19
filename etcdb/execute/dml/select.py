@@ -121,6 +121,8 @@ def eval_row(table_columns, table_row, tree):
         expr = select_item[0]
         expr_value = eval_expr((table_columns, table_row),
                                tree=expr)[1]
+        if isinstance(expr_value, EtcdbFunction):
+            expr_value = expr_value()
 
         result_row += (expr_value, )
 
@@ -188,12 +190,7 @@ def execute_select_no_table(tree):
     result_columns = prepare_columns(tree)
     result_set = ResultSet(result_columns)
 
-    result_row = ()
-
-    for select_item in tree.expressions:
-        expr = select_item[0]
-        expr_value = eval_expr((result_columns, None), tree=expr)[1]
-        result_row += (expr_value, )
+    result_row = eval_row(result_columns, Row(()), tree)
 
     result_set.add_row(result_row)
     return result_set
