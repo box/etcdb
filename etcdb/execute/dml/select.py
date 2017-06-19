@@ -121,7 +121,7 @@ def eval_row(table_columns, table_row, tree):
         expr = select_item[0]
         expr_value = eval_expr((table_columns, table_row),
                                tree=expr)[1]
-        if isinstance(expr_value, EtcdbFunction):
+        if isinstance(expr_value, EtcdbFunction) and not expr_value.group:
             expr_value = expr_value()
 
         result_row += (expr_value, )
