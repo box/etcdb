@@ -215,6 +215,12 @@ class Row(object):
 
     @property
     def etcd_index(self):
+        """A row in etcdb is a key. Etcd index corresponds to X-Etcd-Index
+        in etcd response header.
+
+        :return: Etcd index.
+        :rtype: int
+        """
         return self._etcd_index
 
     def __str__(self):

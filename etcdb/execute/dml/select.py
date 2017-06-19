@@ -58,7 +58,7 @@ def prepare_columns(tree):
     return columns
 
 
-def get_row_by_primary_key(etcd_client, db, table, primary_key,
+def get_row_by_primary_key(etcd_client, db, table, primary_key,  # pylint: disable=too-many-arguments
                            wait=False, wait_index=None):
     """
     Read row from etcd by its primary key value.
@@ -163,9 +163,9 @@ def group_result_set(func, result_set, table_row, tree, pos):
     :return: Result set with aggregated row.
     :rtype: ResultSet"""
     group_value = func(result_set)
-    row = list(eval_row(result_set.columns, table_row, tree))
-    row[pos] = group_value
-    row = Row(tuple(row))
+    values = list(eval_row(result_set.columns, table_row, tree))
+    values[pos] = group_value
+    row = Row(tuple(values))
     return ResultSet(prepare_columns(tree), [row])
 
 
