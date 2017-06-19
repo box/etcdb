@@ -10,7 +10,7 @@ reserved = [
     'LONGTEXT', 'SMALLINT', 'UNSIGNED', 'BOOL', 'TINYINT', 'UNIQUE', 'NAMES',
     'INSERT', 'INTO', 'VALUES', 'DROP', 'LIMIT', 'AS', 'UPDATE', 'COUNT',
     'ORDER', 'BY', 'ASC', 'DESC',
-    'WAIT', 'IF', 'EXISTS', 'DELETE', 'IN'
+    'WAIT', 'IF', 'EXISTS', 'DELETE', 'IN', 'AFTER'
 ]
 
 tokens = ['NUMBER', 'STRING', 'STRING_VALUE',

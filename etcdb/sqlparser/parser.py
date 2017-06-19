@@ -7,6 +7,12 @@ from etcdb.sqlparser.sql_tree import SQLTree
 tokens = lexer.tokens
 _parse_tree = SQLTree()
 
+precedence = (
+    ('left', 'AND', 'OR'),
+    ('right', 'UNOT'),
+)
+
+
 
 def p_statement(p):
     """statement : select_statement
@@ -28,10 +34,18 @@ def p_statement(p):
 
 
 def p_wait_statement(p):
-    """wait_statement : WAIT '(' identifier ')' FROM identifier"""
+    """wait_statement : WAIT select_item_list FROM identifier opt_WHERE opt_AFTER"""
     _parse_tree.query_type = "WAIT"
-    _parse_tree.table = p[6]
-    _parse_tree.expressions = p[3]
+    _parse_tree.table = p[4]
+
+
+def p_opt_after_empty(p):
+    """opt_AFTER : """
+
+
+def p_opt_after(p):
+    """opt_AFTER : AFTER NUMBER"""
+    _parse_tree.options['after'] = int(p[2])
 
 
 def p_update_table_statement(p):
@@ -451,7 +465,7 @@ def p_expr_AND(p):
 
 
 def p_expr_NOT(p):
-    """expr : NOT expr"""
+    """expr : NOT expr %prec UNOT"""
     p[0] = ('NOT', p[2])
 
 

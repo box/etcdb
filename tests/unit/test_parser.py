@@ -1070,12 +1070,43 @@ def test_select_order(query, direction, parser):
 
 
 def test_select_wait(parser):
-    tree = parser.parse("wait(foo) from bar")
+    tree = parser.parse("WAIT name FROM bar WHERE id = 'foo' AFTER 105")
     assert tree.query_type == "WAIT"
     assert tree.table == 'bar'
-    pprint(tree.expressions)
-    # 1/0
-    assert tree.expressions == 'foo'
+    assert tree.expressions == [
+        (
+            ('bool_primary',
+             ('predicate',
+              ('bit_expr',
+               ('simple_expr',
+                ('IDENTIFIER', 'name')
+                )
+               )
+              )
+             ),
+            None
+        ),
+    ]
+    assert tree.where == (
+        'bool_primary', (
+            '=', (
+                'predicate', (
+                    'bit_expr', (
+                        'simple_expr', (
+                            'IDENTIFIER', 'id'
+                        )
+                    )
+                )
+            ), (
+                'bit_expr', (
+                    'simple_expr', (
+                        'literal', 'foo'
+                    )
+                )
+            )
+        )
+    )
+    assert tree.options['after'] == 105
 
 
 def test_insert_with_empty_values(parser):
