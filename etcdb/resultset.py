@@ -136,7 +136,7 @@ class ColumnSet(object):
     @property
     def empty(self):
         """True if there are no columns in the ColumnSet"""
-        return not len(self._columns)
+        return not self._columns
 
     @property
     def columns(self):

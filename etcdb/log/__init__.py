@@ -1,13 +1,14 @@
 """Logging module"""
-import logging
 
-import sys
+import logging
 from logging.handlers import WatchedFileHandler
+import sys
 
 LOG = logging.getLogger(__name__)
 
 
 def setup_logging(logger, logfile=None, debug=False):
+    """Configure a logger"""
 
     fmt_str = "%(asctime)s: %(levelname)s:" \
               " %(module)s.%(funcName)s():%(lineno)d: %(message)s"

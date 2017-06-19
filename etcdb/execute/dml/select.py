@@ -2,7 +2,7 @@
 import json
 
 from etcdb import OperationalError
-from etcdb.eval_expr import eval_expr, EtcdbFunction, etcdb_version, etcdb_count
+from etcdb.eval_expr import eval_expr, EtcdbFunction
 from etcdb.execute.dml.insert import get_table_columns
 from etcdb.resultset import ResultSet, ColumnSet, Column, Row
 
@@ -33,9 +33,7 @@ def list_table(etcd_client, db, tbl):
 
         pks = sorted(pks)
 
-        return pks
-    else:
-        return []
+    return pks
 
 
 def prepare_columns(tree):
@@ -51,7 +49,7 @@ def prepare_columns(tree):
 
         expr, alias = select_item
 
-        colname, colvalue = eval_expr(None, tree=expr)
+        colname, _ = eval_expr(None, tree=expr)
         if alias:
             colname = alias
 
@@ -106,7 +104,7 @@ def group_function(table_columns, table_row, tree):
         return None, None
 
 
-def eval_row(table_columns, table_row, tree, result_set):
+def eval_row(table_columns, table_row, tree):
     """Find values of a row. table_columns are fields in the table.
     The result columns is taken from tree.expressions.
 
@@ -116,9 +114,6 @@ def eval_row(table_columns, table_row, tree, result_set):
     :type table_row: Row
     :param tree: Parsing tree.
     :type tree: SQLTree
-    :param result_set: Some functions like COUNT(*) need result set to
-        calculate return value.
-    :type result_set: ResultSet
     """
     result_row = ()
 
@@ -148,7 +143,7 @@ def group_result_set(func, result_set, table_row, tree, pos):
     :return: Result set with aggregated row.
     :rtype: ResultSet"""
     group_value = func(result_set)
-    row = list(eval_row(result_set.columns, table_row, tree, result_set))
+    row = list(eval_row(result_set.columns, table_row, tree))
     row[pos] = group_value
     row = Row(tuple(row))
     return ResultSet(prepare_columns(tree), [row])
@@ -171,11 +166,11 @@ def execute_select_plain(etcd_client, tree, db):
         if tree.where:
             expr = tree.where
             if eval_expr((table_columns, table_row), expr)[1]:
-                row = eval_row(table_columns, table_row, tree, result_set)
+                row = eval_row(table_columns, table_row, tree)
                 result_set.add_row(row)
                 last_row = table_row
         else:
-            row = eval_row(table_columns, table_row, tree, result_set)
+            row = eval_row(table_columns, table_row, tree)
             result_set.add_row(row)
             last_row = table_row
 
