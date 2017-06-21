@@ -162,7 +162,7 @@ def test_eval_row(cs, row, expressions, result):
     tree = SQLTree()
     tree.expressions = expressions
 
-    assert eval_row(cs, row, tree, ResultSet(cs)) == result
+    assert eval_row(cs, row, tree) == result
 
 
 @pytest.mark.parametrize('rs, row, expressions, result', [

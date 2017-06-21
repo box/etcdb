@@ -2,7 +2,7 @@
 import json
 
 from etcdb import OperationalError
-from etcdb.eval_expr import eval_expr, EtcdbFunction, etcdb_version, etcdb_count
+from etcdb.eval_expr import eval_expr, EtcdbFunction
 from etcdb.execute.dml.insert import get_table_columns
 from etcdb.resultset import ResultSet, ColumnSet, Column, Row
 
@@ -33,9 +33,7 @@ def list_table(etcd_client, db, tbl):
 
         pks = sorted(pks)
 
-        return pks
-    else:
-        return []
+    return pks
 
 
 def prepare_columns(tree):
@@ -51,7 +49,7 @@ def prepare_columns(tree):
 
         expr, alias = select_item
 
-        colname, colvalue = eval_expr(None, tree=expr)
+        colname, _ = eval_expr(None, tree=expr)
         if alias:
             colname = alias
 
@@ -60,26 +58,44 @@ def prepare_columns(tree):
     return columns
 
 
-def get_row_by_primary_key(etcd_client, db, table, primary_key):
+def get_row_by_primary_key(etcd_client, db, table, primary_key,  # pylint: disable=too-many-arguments
+                           wait=False, wait_index=None):
     """
     Read row from etcd by its primary key value.
 
     :param etcd_client:
+    :type etcd_client: Client
     :param db:
     :param table:
     :param primary_key: Primary key value.
+    :param wait: If True it will wait for a change in the key
+    :type wait: bool
+    :param wait_index: When waiting you can specify index to wait for.
+    :type wait_index: int
     :return: Row
     :rtype: Row
     """
     key = "/{db}/{tbl}/{pk}".format(db=db,
                                     tbl=table,
                                     pk=primary_key)
-    etcd_response = etcd_client.read(key)
+    kwargs = {}
+    if wait:
+        kwargs['wait'] = True
+        if wait_index:
+            kwargs['waitIndex'] = wait_index
+    if kwargs:
+        etcd_response = etcd_client.read(key, **kwargs)
+    else:
+        etcd_response = etcd_client.read(key)
     row = ()
     for _, value in json.loads(etcd_response.node['value']).iteritems():
         row += (value,)
 
-    return Row(row)
+    try:
+        etcd_index = etcd_response.x_etcd_index
+    except AttributeError:
+        etcd_index = 0
+    return Row(row, etcd_index=etcd_index)
 
 
 def group_function(table_columns, table_row, tree):
@@ -106,7 +122,7 @@ def group_function(table_columns, table_row, tree):
         return None, None
 
 
-def eval_row(table_columns, table_row, tree, result_set):
+def eval_row(table_columns, table_row, tree):
     """Find values of a row. table_columns are fields in the table.
     The result columns is taken from tree.expressions.
 
@@ -116,9 +132,6 @@ def eval_row(table_columns, table_row, tree, result_set):
     :type table_row: Row
     :param tree: Parsing tree.
     :type tree: SQLTree
-    :param result_set: Some functions like COUNT(*) need result set to
-        calculate return value.
-    :type result_set: ResultSet
     """
     result_row = ()
 
@@ -126,6 +139,8 @@ def eval_row(table_columns, table_row, tree, result_set):
         expr = select_item[0]
         expr_value = eval_expr((table_columns, table_row),
                                tree=expr)[1]
+        if isinstance(expr_value, EtcdbFunction) and not expr_value.group:
+            expr_value = expr_value()
 
         result_row += (expr_value, )
 
@@ -148,9 +163,9 @@ def group_result_set(func, result_set, table_row, tree, pos):
     :return: Result set with aggregated row.
     :rtype: ResultSet"""
     group_value = func(result_set)
-    row = list(eval_row(result_set.columns, table_row, tree, result_set))
-    row[pos] = group_value
-    row = Row(tuple(row))
+    values = list(eval_row(result_set.columns, table_row, tree))
+    values[pos] = group_value
+    row = Row(tuple(values))
     return ResultSet(prepare_columns(tree), [row])
 
 
@@ -171,11 +186,11 @@ def execute_select_plain(etcd_client, tree, db):
         if tree.where:
             expr = tree.where
             if eval_expr((table_columns, table_row), expr)[1]:
-                row = eval_row(table_columns, table_row, tree, result_set)
+                row = eval_row(table_columns, table_row, tree)
                 result_set.add_row(row)
                 last_row = table_row
         else:
-            row = eval_row(table_columns, table_row, tree, result_set)
+            row = eval_row(table_columns, table_row, tree)
             result_set.add_row(row)
             last_row = table_row
 
@@ -193,12 +208,7 @@ def execute_select_no_table(tree):
     result_columns = prepare_columns(tree)
     result_set = ResultSet(result_columns)
 
-    result_row = ()
-
-    for select_item in tree.expressions:
-        expr = select_item[0]
-        expr_value = eval_expr((result_columns, None), tree=expr)[1]
-        result_row += (expr_value, )
+    result_row = eval_row(result_columns, Row(()), tree)
 
     result_set.add_row(result_row)
     return result_set

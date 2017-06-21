@@ -17,6 +17,7 @@ from etcdb.execute.dml.select import execute_select
 from etcdb.execute.dml.show import show_databases, show_tables, desc_table
 from etcdb.execute.dml.update import execute_update
 from etcdb.execute.dml.use import use_database
+from etcdb.execute.dml.wait import execute_wait
 from etcdb.log import LOG
 from etcdb.sqlparser.parser import SQLParser, SQLParserError
 
@@ -170,6 +171,9 @@ class Cursor(object):
         elif tree.query_type == 'SELECT':
             self._result_set = execute_select(self.connection.client, tree,
                                               db=self._db)
+        elif tree.query_type == 'WAIT':
+            self._result_set = execute_wait(self.connection.client, tree,
+                                            db=self._db)
         elif tree.query_type == "UPDATE":
             self._rowcount = execute_update(self.connection.client, tree,
                                             db=self._db)

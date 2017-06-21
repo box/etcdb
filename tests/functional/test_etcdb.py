@@ -1,30 +1,9 @@
-import json
-
 import etcdb
-import pytest
-import requests
-
-
-@pytest.fixture
-def cursor():
-    # Clean database
-    http_response = requests.get('http://10.0.1.10:2379/v2/keys/')
-    content = http_response.content
-    node = json.loads(content)['node']
-    try:
-        for n in node['nodes']:
-            key = n['key']
-            requests.delete('http://10.0.1.10:2379/v2/keys{key}?recursive=true'.format(key=key))
-    except KeyError:
-        pass
-
-    connection = etcdb.connect(host='10.0.1.10', db='foo', timeout=1)
-    return connection.cursor()
 
 
 def test_select_version(cursor):
     cursor.execute('SELECT VERSION()')
-    assert cursor.fetchone()[0] == '2.3.7'
+    assert cursor.fetchone()[0] == etcdb.__version__
 
 
 def test_get_meta_lock(cursor):
@@ -35,9 +14,9 @@ def test_get_meta_lock(cursor):
 
 def test_select_limit(cursor):
     cursor.execute('CREATE TABLE t1(id INT NOT NULL PRIMARY KEY AUTO_INCREMENT, name VARCHAR(255))')
-    cursor.execute("INSERT INTO t1(name) VALUES ('aaa')")
-    cursor.execute("INSERT INTO t1(name) VALUES ('bbb')")
-    cursor.execute("INSERT INTO t1(name) VALUES ('ccc')")
+    cursor.execute("INSERT INTO t1(id, name) VALUES (1, 'aaa')")
+    cursor.execute("INSERT INTO t1(id, name) VALUES (2, 'bbb')")
+    cursor.execute("INSERT INTO t1(id, name) VALUES (3, 'ccc')")
     cursor.execute("SELECT id, name FROM t1 LIMIT 2")
     assert cursor.fetchall() == (
         ('1', 'aaa'),
@@ -62,16 +41,16 @@ def test_select_where(cursor):
 )""")
     cursor.execute('SHOW TABLES')
     assert cursor.fetchone() == ('auth_user',)
-    cursor.execute("INSERT INTO `auth_user` (`password`, `last_login`, "
+    cursor.execute("INSERT INTO `auth_user` (id, `password`, `last_login`, "
                    "`is_superuser`, `username`, `first_name`, `last_name`, "
                    "`email`, `is_staff`, `is_active`, `date_joined`) "
-                   "VALUES ('=', 'None', "
+                   "VALUES (1, '=', 'None', "
                    "'True', 'root1', 'a', 'b', "
                    "'a@a.com', 'True', 'True', '2017-06-06 20:33:38')")
-    cursor.execute("INSERT INTO `auth_user` (`password`, `last_login`, "
+    cursor.execute("INSERT INTO `auth_user` (id, `password`, `last_login`, "
                    "`is_superuser`, `username`, `first_name`, `last_name`, "
                    "`email`, `is_staff`, `is_active`, `date_joined`) "
-                   "VALUES ('=', 'None', "
+                   "VALUES (2, '=', 'None', "
                    "'True', 'root2', 'a', 'b', "
                    "'a@a.com', 'True', 'True', '2017-06-06 20:33:38')")
     cursor.execute('SELECT id, username FROM auth_user')

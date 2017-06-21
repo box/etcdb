@@ -26,23 +26,19 @@ BROWSER := python -c "$$BROWSER_PYSCRIPT"
 help:
 	@python -c "$$PRINT_HELP_PYSCRIPT" < $(MAKEFILE_LIST)
 
-.PHONY: rebuild-requirements
-rebuild-requirements: ## Rebuild requirements files requirements.txt and requirements_dev.txt
-	pip-compile --verbose --no-index --output-file requirements.txt requirements.in
-	pip-compile --verbose --no-index --output-file requirements_dev.txt requirements_dev.in
 
-.PHONY: upgrade-requirements
-upgrade-requirements: ## Upgrade requirements
-	pip-compile --upgrade --verbose --no-index --output-file requirements.txt requirements.in
-	pip-compile --upgrade --verbose --no-index --output-file requirements_dev.txt requirements_dev.in
+.PHONY: pip-tools
+pip-tools:
+	which pip-compile || pip install -U "pip-tools>=1.6.0"
+
 
 .PHONY: bootstrap
-bootstrap: ## bootstrap the development environment
+bootstrap: pip-tools  ## bootstrap the development environment
 	pip install -U "setuptools==32.3.1"
 	pip install -U "pip==9.0.1"
-	pip install -U "pip-tools>=1.6.0"
 	pip-sync requirements.txt requirements_dev.txt
 	pip install --editable .
+
 
 clean: clean-build clean-pyc clean-test ## remove all build, test, coverage and Python artifacts
 
@@ -69,10 +65,10 @@ lint: ## check style with pylint
 	pylint etcdb
 
 test: ## run tests quickly with the default Python
-	py.test --cov=etcdb --cov-report term-missing tests/unit
+	py.test -x --cov=etcdb --cov-report term-missing tests/unit
 
 test-functional: ## run functional tests. Vagrant machines must run.
-	py.test -v tests/functional
+	py.test -xv tests/functional
 
 
 test-all: ## run tests on every Python version with tox
@@ -103,3 +99,16 @@ dist: clean ## builds source and wheel package
 
 install: clean ## install the package to the active Python's site-packages
 	python setup.py install
+
+docker-start:
+	@docker run \
+		-v $(shell pwd):/etcdb \
+		-it \
+		ubuntu:xenial \
+		/bin/bash -l
+
+docker-test-func:
+	@docker run \
+		-v $(shell pwd):/etcdb \
+		ubuntu:xenial \
+		/bin/bash -l /etcdb/support/run_func_test.sh

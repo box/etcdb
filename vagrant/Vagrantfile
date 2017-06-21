@@ -43,6 +43,9 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
             end
         end
         config.vm.synced_folder '..', '/etcdb'
+        if File.directory? '../../pyetcd'
+            config.vm.synced_folder '../../pyetcd', '/pyetcd'
+        end
     end
 
     config.vm.provision 'shell', inline: $script

@@ -1,3 +1,4 @@
+"""Implement UPDATE query."""
 import json
 
 from etcdb.eval_expr import eval_expr
@@ -11,12 +12,13 @@ def _update_key(etcd_client, key, value):
 
 def execute_update(etcd_client, tree, db):
     """Execute UPDATE query"""
-    row_count = 0
+    affected_rows = 0
+    table_columns = get_table_columns(etcd_client, db, tree.table)
+
     for primary_key in list_table(etcd_client, db, tree.table):
 
         table_row = get_row_by_primary_key(etcd_client, db, tree.table,
                                            primary_key)
-        table_columns = get_table_columns(etcd_client, db, tree.table)
         key = '/{db}/{tbl}/{pk}'.format(db=db, tbl=tree.table, pk=primary_key)
 
         row = {}
@@ -32,12 +34,11 @@ def execute_update(etcd_client, tree, db):
             row[field_name] = field_value[1]
 
         if tree.where:
-            expr = tree.where
 
-            if eval_expr((table_columns, table_row), expr)[1]:
+            if eval_expr((table_columns, table_row), tree.where)[1]:
                 _update_key(etcd_client, key, json.dumps(row))
-                row_count += 1
+                affected_rows += 1
         else:
             _update_key(etcd_client, key, json.dumps(row))
-            row_count += 1
-    return row_count
+            affected_rows += 1
+    return affected_rows

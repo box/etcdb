@@ -136,7 +136,7 @@ class ColumnSet(object):
     @property
     def empty(self):
         """True if there are no columns in the ColumnSet"""
-        return not len(self._columns)
+        return not self._columns
 
     @property
     def columns(self):
@@ -198,11 +198,12 @@ class Row(object):
     :param row: Row values
     :type row: tuple
     """
-    def __init__(self, row):
+    def __init__(self, row, etcd_index=0):
         if not isinstance(row, tuple):
             raise ProgrammingError('%s must be tuple')
         self._row = row
         self._field_position = 0
+        self._etcd_index = etcd_index
 
     @property
     def row(self):
@@ -211,6 +212,16 @@ class Row(object):
         :rtype: tuple
         """
         return self._row
+
+    @property
+    def etcd_index(self):
+        """A row in etcdb is a key. Etcd index corresponds to X-Etcd-Index
+        in etcd response header.
+
+        :return: Etcd index.
+        :rtype: int
+        """
+        return self._etcd_index
 
     def __str__(self):
         return json.dumps(self._row)
