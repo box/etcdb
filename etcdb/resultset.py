@@ -1,7 +1,7 @@
 """Classes that represent query results"""
 import json
 
-from etcdb import ProgrammingError
+from etcdb import ProgrammingError, InternalError
 
 
 class ColumnOptions(object):  # pylint: disable=too-few-public-methods
@@ -331,7 +331,10 @@ class ResultSet(object):
         :type row: Row
         :return: Updated result set
         :rtype: ResultSet
+        :raise InternalError: if row is not a Row class instance.
         """
+        if not isinstance(row, Row):
+            raise InternalError('%r must be of type Row' % row)
         self.rows.append(row)
         self._update_print_width(row)
         # return self

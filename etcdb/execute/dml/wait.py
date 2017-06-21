@@ -3,7 +3,7 @@ from etcdb.eval_expr import eval_expr
 from etcdb.execute.dml.insert import get_table_columns
 from etcdb.execute.dml.select import prepare_columns, list_table, \
     get_row_by_primary_key, eval_row
-from etcdb.resultset import ResultSet
+from etcdb.resultset import ResultSet, Row
 
 
 def execute_wait(etcd_client, tree, db):
@@ -26,10 +26,12 @@ def execute_wait(etcd_client, tree, db):
                 new_row = get_row_by_primary_key(etcd_client, db, tree.table,
                                                  primary_key, wait=True,
                                                  wait_index=etcd_index+1)
-                row = eval_row(table_columns, new_row, tree)
+                row = Row(eval_row(table_columns, new_row, tree),
+                          etcd_index=etcd_index)
                 result_set.add_row(row)
         else:
-            row = eval_row(table_columns, table_row, tree)
+            row = Row(eval_row(table_columns, table_row, tree),
+                      etcd_index=etcd_index)
             result_set.add_row(row)
 
     return result_set
