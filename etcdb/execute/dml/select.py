@@ -186,11 +186,11 @@ def execute_select_plain(etcd_client, tree, db):
         if tree.where:
             expr = tree.where
             if eval_expr((table_columns, table_row), expr)[1]:
-                row = eval_row(table_columns, table_row, tree)
+                row = Row(eval_row(table_columns, table_row, tree))
                 result_set.add_row(row)
                 last_row = table_row
         else:
-            row = eval_row(table_columns, table_row, tree)
+            row = Row(eval_row(table_columns, table_row, tree))
             result_set.add_row(row)
             last_row = table_row
 
@@ -208,7 +208,7 @@ def execute_select_no_table(tree):
     result_columns = prepare_columns(tree)
     result_set = ResultSet(result_columns)
 
-    result_row = eval_row(result_columns, Row(()), tree)
+    result_row = Row(eval_row(result_columns, Row(()), tree))
 
     result_set.add_row(result_row)
     return result_set
