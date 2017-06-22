@@ -47,6 +47,7 @@ Question mark style, e.g. ...WHERE name=?."""
 
 NULL = None
 LOCK_WAIT_TIMEOUT = 50
+WAIT_WAIT_TIMEOUT = 5
 ETCDTABLELOCK = Enum('EtcdTableLock', 'read write')
 
 
