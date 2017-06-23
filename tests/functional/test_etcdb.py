@@ -1,3 +1,8 @@
+from multiprocessing import Process, Queue
+
+import psutil as psutil
+import time
+
 import etcdb
 
 
@@ -59,3 +64,43 @@ def test_select_where(cursor):
 
     cursor.execute("SELECT id, username FROM auth_user WHERE username = 'root1'")
     assert cursor.fetchone() == ('1', 'root1')
+
+
+def test_wait_after_increases_modified(cursor):
+    cursor.execute('CREATE TABLE t1(id INT NOT NULL PRIMARY KEY AUTO_INCREMENT, name VARCHAR(255))')
+    cursor.execute("INSERT INTO t1(id, name) VALUES (1, 'aaa')")
+    cursor.execute("SELECT id, name FROM t1 WHERE id = 1")
+    assert cursor.n_rows == 1
+    etcd_index = int(cursor.result_set.rows[0].etcd_index)
+    assert etcd_index > 1
+    wait_index = etcd_index + 1
+
+    def _wait(que):
+
+        query = "WAIT id, name FROM t1 WHERE id = 1 AFTER %d" \
+                % wait_index
+
+        cursor.execute(query)
+        que.put(int(cursor.result_set.rows[0].modified_index))
+
+    q = Queue()
+    p = Process(target=_wait, args=(q, ))
+    p.start()
+    wait_proc = psutil.Process(p.pid)
+
+    # Wait until the child establishes a TCP connection to etcd
+    while True:
+        tc_count = 0
+        for tc in wait_proc.connections('tcp'):
+            if tc.status == 'ESTABLISHED' and tc.raddr[1] == 2379:
+                tc_count += 1
+        if tc_count > 0:
+            break
+
+    time.sleep(1)
+
+    cursor.execute("update t1 set name = 'bb'")
+    p.join(timeout=10)
+    modified_index = q.get()
+
+    assert modified_index == wait_index

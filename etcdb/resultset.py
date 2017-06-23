@@ -198,12 +198,13 @@ class Row(object):
     :param row: Row values
     :type row: tuple
     """
-    def __init__(self, row, etcd_index=0):
+    def __init__(self, row, etcd_index=0, modified_index=0):
         if not isinstance(row, tuple):
             raise ProgrammingError('%s must be tuple')
         self._row = row
         self._field_position = 0
         self._etcd_index = etcd_index
+        self._modified_index = modified_index
 
     @property
     def row(self):
@@ -222,6 +223,11 @@ class Row(object):
         :rtype: int
         """
         return self._etcd_index
+
+    @property
+    def modified_index(self):
+        """modifiedIndex of a key in etcd"""
+        return self._modified_index
 
     def __str__(self):
         return json.dumps(self._row)
