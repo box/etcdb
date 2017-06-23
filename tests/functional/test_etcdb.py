@@ -104,3 +104,11 @@ def test_wait_after_increases_modified(cursor):
     modified_index = q.get()
 
     assert modified_index == wait_index
+
+
+def test_select_sets_modified_index(cursor):
+    cursor.execute('CREATE TABLE t1(id INT NOT NULL '
+                   'PRIMARY KEY AUTO_INCREMENT, name VARCHAR(255))')
+    cursor.execute("INSERT INTO t1(id, name) VALUES (1, 'aaa')")
+    cursor.execute("SELECT id, name FROM t1 WHERE id = 1")
+    assert int(cursor.result_set.rows[0].modified_index) > 0
