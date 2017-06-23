@@ -95,7 +95,8 @@ def get_row_by_primary_key(etcd_client, db, table, primary_key,  # pylint: disab
         etcd_index = etcd_response.x_etcd_index
     except AttributeError:
         etcd_index = 0
-    return Row(row, etcd_index=etcd_index)
+    return Row(row, etcd_index=etcd_index,
+               modified_index=etcd_response.node['modifiedIndex'])
 
 
 def group_function(table_columns, table_row, tree):

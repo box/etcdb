@@ -56,11 +56,13 @@ def execute_wait(etcd_client, tree, db):
                     except KeyError:
                         wait_index += 1
                 row = Row(eval_row(table_columns, new_row, tree),
-                          etcd_index=new_row.etcd_index)
+                          etcd_index=new_row.etcd_index,
+                          modified_index=new_row.modified_index)
                 result_set.add_row(row)
         else:
             row = Row(eval_row(table_columns, table_row, tree),
-                      etcd_index=etcd_index)
+                      etcd_index=etcd_index,
+                      modified_index=etcd_index)
             result_set.add_row(row)
 
     return result_set

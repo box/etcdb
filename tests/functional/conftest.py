@@ -20,6 +20,6 @@ def cursor():
         pass
 
     connection = etcdb.connect(host='127.0.0.1', db='foo', timeout=1)
-    cursor = connection.cursor()
-    cursor.execute('CREATE DATABASE foo')
-    return cursor
+    cur = connection.cursor()
+    cur.execute('CREATE DATABASE foo')
+    return cur

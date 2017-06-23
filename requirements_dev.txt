@@ -8,3 +8,4 @@ py>=1.4.29
 mock
 pytest-cov
 Sphinx
+psutil
