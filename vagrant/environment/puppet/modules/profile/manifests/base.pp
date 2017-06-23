@@ -21,7 +21,7 @@ class profile::base {
         ensure => installed
     }
 
-    $packages = ['vim-enhanced', 'python2-pip', 'jq']
+    $packages = ['vim-enhanced', 'python2-pip', 'jq', 'gcc', 'python-devel']
 
     package { $packages:
         ensure => installed,
