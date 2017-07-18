@@ -11,7 +11,7 @@ def _update_key(etcd_client, key, value):
     etcd_client.write(key, value)
 
 
-def execute_update(etcd_client, tree, db):
+def execute_update(etcd_client, tree, db):  # pylint: disable=too-many-locals
     """Execute UPDATE query"""
     lock = WriteLock(etcd_client, db, tree.table)
     lock.acquire()

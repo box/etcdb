@@ -17,15 +17,15 @@ from etcdb import LOCK_WAIT_TIMEOUT, OperationalError, InternalError
 
 
 class Lock(object):
-    def __init__(self, etcd_client, db, tbl, lock_prefix=None, lock_id=None):
-        """
-        Instantiate Lock instance for a table.
+    """
+    Instantiate Lock instance for a table.
 
-        :param etcd_client: Etcd client
-        :type etcd_client: Client
-        :param db: Database name.
-        :param tbl: Table name.
-        """
+    :param etcd_client: Etcd client
+    :type etcd_client: Client
+    :param db: Database name.
+    :param tbl: Table name.
+    """
+    def __init__(self, etcd_client, db, tbl, lock_prefix=None, lock_id=None):  # pylint: disable=too-many-arguments
         self._etcd_client = etcd_client
         self._db = db
         self._tbl = tbl
@@ -122,8 +122,8 @@ class Lock(object):
         return locks
 
     def _keep_key_alive(self, key, timeout):
-        p = Process(target=self._refresh_ttl, args=(key, timeout))
-        p.start()
+        proc = Process(target=self._refresh_ttl, args=(key, timeout))
+        proc.start()
 
     def _refresh_ttl(self, key, timeout):
         while True:
@@ -134,6 +134,7 @@ class Lock(object):
 
 
 class MetaLock(Lock):
+    """Meta lock is needed to place a read or write lock."""
     def __init__(self, etcd_client, db, tbl):
         """
         Instantiate MetaLock instance for a table.
@@ -146,6 +147,7 @@ class MetaLock(Lock):
 
 
 class WriteLock(Lock):
+    """Write lock."""
     def __init__(self, etcd_client, db, tbl, lock_id=None):
 
         if not lock_id:
@@ -171,6 +173,7 @@ class WriteLock(Lock):
 
 
 class ReadLock(Lock):
+    """Read lock."""
     def __init__(self, etcd_client, db, tbl, lock_id=None):
 
         if not lock_id:
