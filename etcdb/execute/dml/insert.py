@@ -4,6 +4,7 @@ import json
 from pyetcd import EtcdKeyNotFound
 
 from etcdb import IntegrityError, ProgrammingError
+from etcdb.lock import WriteLock
 from etcdb.resultset import ColumnSet
 
 
@@ -53,6 +54,9 @@ def insert(etcd_client, tree, db):
     :type db: str
     :raise IntegrityError: if duplicate primary key
     """
+    lock = WriteLock(etcd_client, db, tree.table)
+    lock.acquire()
+
     # get pk value
     pk_field = get_pk_field(etcd_client, db, tree.table)
     primary_key = tree.fields[str(pk_field)]
@@ -71,3 +75,6 @@ def insert(etcd_client, tree, db):
                                   pk=primary_key),
                           json.dumps(tree.fields))
         return 1
+
+    finally:
+        lock.release()
