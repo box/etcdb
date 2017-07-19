@@ -10,7 +10,7 @@ from etcdb.connection import Connection
 
 @pytest.yield_fixture
 def etcdb_connection():
-    connection = Connection(db='foo', host='10.0.1.10')
+    connection = Connection(db='foo', host='127.0.0.1')
     cur = connection.cursor()
     try:
         cur.execute('DROP DATABASE foo')
