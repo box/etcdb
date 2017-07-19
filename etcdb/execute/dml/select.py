@@ -4,6 +4,7 @@ import json
 from etcdb import OperationalError
 from etcdb.eval_expr import eval_expr, EtcdbFunction
 from etcdb.execute.dml.insert import get_table_columns
+from etcdb.lock import ReadLock
 from etcdb.resultset import ResultSet, ColumnSet, Column, Row
 
 
@@ -265,8 +266,13 @@ def execute_select(etcd_client, tree, db):
         raise OperationalError('No database selected')
 
     if tree.table:
+        lock = ReadLock(etcd_client, db, tree.table)
+        lock.acquire()
+
         tree = fix_tree_star(tree, etcd_client, db, tree.table)
         result_set = execute_select_plain(etcd_client, tree, db)
+
+        lock.release()
     else:
         result_set = execute_select_no_table(tree)
 

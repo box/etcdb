@@ -4,14 +4,18 @@ import json
 from etcdb.eval_expr import eval_expr
 from etcdb.execute.dml.insert import get_table_columns
 from etcdb.execute.dml.select import list_table, get_row_by_primary_key
+from etcdb.lock import WriteLock
 
 
 def _update_key(etcd_client, key, value):
     etcd_client.write(key, value)
 
 
-def execute_update(etcd_client, tree, db):
+def execute_update(etcd_client, tree, db):  # pylint: disable=too-many-locals
     """Execute UPDATE query"""
+    lock = WriteLock(etcd_client, db, tree.table)
+    lock.acquire()
+
     affected_rows = 0
     table_columns = get_table_columns(etcd_client, db, tree.table)
 
@@ -41,4 +45,7 @@ def execute_update(etcd_client, tree, db):
         else:
             _update_key(etcd_client, key, json.dumps(row))
             affected_rows += 1
+
+    lock.release()
+
     return affected_rows
