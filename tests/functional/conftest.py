@@ -2,6 +2,7 @@ import json
 
 import pytest
 import requests
+from subprocess import Popen
 
 import etcdb
 from etcdb import OperationalError
@@ -18,6 +19,7 @@ def etcdb_connection():
         pass
     cur.execute('CREATE DATABASE foo')
     yield connection
+    Popen(['ps', 'ax'])
     cur.execute('DROP DATABASE foo')
 
 
