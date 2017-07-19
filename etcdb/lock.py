@@ -63,7 +63,7 @@ class Lock(object):
                 self._keep_key_alive(key, timeout)
                 return self._id
             except EtcdNodeExist:
-                pass
+                time.sleep(timeout/2.0)
 
         raise OperationalError('Lock wait timeout')
 
@@ -126,9 +126,12 @@ class Lock(object):
         proc.start()
 
     def _refresh_ttl(self, key, timeout):
+        ttl = timeout
         while True:
             try:
-                self._etcd_client.update_ttl(key, timeout)
+                self._etcd_client.update_ttl(key, ttl)
+                time.sleep(ttl/2.0)
+                ttl *= 2
             except (EtcdKeyNotFound, KeyboardInterrupt):
                 break
 
@@ -163,11 +166,14 @@ class WriteLock(Lock):
         meta_lock.acquire(timeout=timeout)
 
         expires = time.time() + LOCK_WAIT_TIMEOUT
+        wait_time = timeout
         while time.time() < expires:
             if not self.writers() and not self.readers():
                 super(WriteLock, self).acquire(timeout=timeout)
                 meta_lock.release()
                 return self._id
+            time.sleep(wait_time)
+            wait_time *= 2
 
         raise OperationalError('Lock wait timeout')
 
@@ -189,10 +195,13 @@ class ReadLock(Lock):
         meta_lock.acquire(timeout=timeout)
 
         expires = time.time() + LOCK_WAIT_TIMEOUT
+        wait_time = timeout
         while time.time() < expires:
             if not self.writers():
                 super(ReadLock, self).acquire()
                 meta_lock.release()
                 return self._id
+            time.sleep(wait_time)
+            wait_time *= 2
 
         raise OperationalError('Lock wait timeout')
