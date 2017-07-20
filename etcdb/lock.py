@@ -165,17 +165,19 @@ class WriteLock(Lock):
         meta_lock = MetaLock(self._etcd_client, self._db, self._tbl)
         meta_lock.acquire(timeout=timeout)
 
-        expires = time.time() + LOCK_WAIT_TIMEOUT
-        wait_time = timeout
-        while time.time() < expires:
-            if not self.writers() and not self.readers():
-                super(WriteLock, self).acquire(timeout=timeout)
-                meta_lock.release()
-                return self._id
-            time.sleep(wait_time)
-            wait_time *= 2
+        try:
+            expires = time.time() + LOCK_WAIT_TIMEOUT
+            wait_time = timeout
+            while time.time() < expires:
+                if not self.writers() and not self.readers():
+                    super(WriteLock, self).acquire(timeout=timeout)
+                    return self._id
+                time.sleep(wait_time)
+                wait_time *= 2
 
-        raise OperationalError('Lock wait timeout')
+            raise OperationalError('Lock wait timeout')
+        finally:
+            meta_lock.release()
 
 
 class ReadLock(Lock):
@@ -194,14 +196,16 @@ class ReadLock(Lock):
         meta_lock = MetaLock(self._etcd_client, self._db, self._tbl)
         meta_lock.acquire(timeout=timeout)
 
-        expires = time.time() + LOCK_WAIT_TIMEOUT
-        wait_time = timeout
-        while time.time() < expires:
-            if not self.writers():
-                super(ReadLock, self).acquire()
-                meta_lock.release()
-                return self._id
-            time.sleep(wait_time)
-            wait_time *= 2
+        try:
+            expires = time.time() + LOCK_WAIT_TIMEOUT
+            wait_time = timeout
+            while time.time() < expires:
+                if not self.writers():
+                    super(ReadLock, self).acquire()
+                    return self._id
+                time.sleep(wait_time)
+                wait_time *= 2
 
-        raise OperationalError('Lock wait timeout')
+            raise OperationalError('Lock wait timeout')
+        finally:
+            meta_lock.release()

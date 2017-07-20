@@ -15,25 +15,26 @@ def execute_delete(etcd_client, tree, db):
     """Execute DELETE query"""
     lock = WriteLock(etcd_client, db, tree.table)
     lock.acquire()
+    try:
 
-    affected_rows = 0
-    table_columns = get_table_columns(etcd_client, db, tree.table)
-    for primary_key in list_table(etcd_client, db, tree.table):
+        affected_rows = 0
+        table_columns = get_table_columns(etcd_client, db, tree.table)
+        for primary_key in list_table(etcd_client, db, tree.table):
 
-        table_row = get_row_by_primary_key(etcd_client, db, tree.table,
-                                           primary_key)
+            table_row = get_row_by_primary_key(etcd_client, db, tree.table,
+                                               primary_key)
 
-        key = "/{db}/{tbl}/{pk}".format(db=db, tbl=tree.table, pk=primary_key)
+            key = "/{db}/{tbl}/{pk}".format(db=db, tbl=tree.table, pk=primary_key)
 
-        if tree.where:
-            expr = tree.where
-            if eval_expr((table_columns, table_row), expr)[1]:
+            if tree.where:
+                expr = tree.where
+                if eval_expr((table_columns, table_row), expr)[1]:
+                    _delete_key(etcd_client, key)
+                affected_rows += 1
+            else:
                 _delete_key(etcd_client, key)
-            affected_rows += 1
-        else:
-            _delete_key(etcd_client, key)
-            affected_rows += 1
+                affected_rows += 1
+        return affected_rows
 
-    lock.release()
-
-    return affected_rows
+    finally:
+        lock.release()
