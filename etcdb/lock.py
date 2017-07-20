@@ -171,7 +171,6 @@ class WriteLock(Lock):
             while time.time() < expires:
                 if not self.writers() and not self.readers():
                     super(WriteLock, self).acquire(timeout=timeout)
-                    meta_lock.release()
                     return self._id
                 time.sleep(wait_time)
                 wait_time *= 2
@@ -203,7 +202,6 @@ class ReadLock(Lock):
             while time.time() < expires:
                 if not self.writers():
                     super(ReadLock, self).acquire()
-                    meta_lock.release()
                     return self._id
                 time.sleep(wait_time)
                 wait_time *= 2

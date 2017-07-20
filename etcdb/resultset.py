@@ -238,6 +238,9 @@ class Row(object):
         except AttributeError:
             return False
 
+    def __ne__(self, other):
+        return not self.__eq__(other)
+
     def __iter__(self):
         return self
 
@@ -252,6 +255,9 @@ class Row(object):
 
     def __getitem__(self, key):
         return self._row[key]
+
+    def __repr__(self):
+        return self.__str__()
 
 
 class ResultSet(object):

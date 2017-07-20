@@ -89,8 +89,10 @@ def get_row_by_primary_key(etcd_client, db, table, primary_key,  # pylint: disab
     else:
         etcd_response = etcd_client.read(key)
     row = ()
-    for _, value in json.loads(etcd_response.node['value']).iteritems():
-        row += (value,)
+    field_values = json.loads(etcd_response.node['value'])
+    table_columns = get_table_columns(etcd_client, db, table)
+    for col in table_columns:
+        row += (field_values[str(col)], )
 
     try:
         etcd_index = etcd_response.x_etcd_index

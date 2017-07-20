@@ -45,7 +45,9 @@ def test_insert_duplicate_raises(mock_release, mock_acquire,
 @mock.patch('etcdb.execute.dml.insert.get_pk_field')
 @mock.patch.object(WriteLock, 'acquire')
 @mock.patch.object(WriteLock, 'release')
-def test_insert(mock_release, mock_acquire, mock_get_pk_field):
+@mock.patch('etcdb.execute.dml.insert._set_next_auto_inc')
+def test_insert(mock_set_next_auto_inc,
+                mock_release, mock_acquire, mock_get_pk_field):
     mock_get_pk_field.return_value = Column('id')
 
     etcd_client = mock.Mock()
@@ -57,6 +59,7 @@ def test_insert(mock_release, mock_acquire, mock_get_pk_field):
     insert(etcd_client, tree, 'foo')
     etcd_client.write.assert_called_once_with('/foo/bar/1',
                                               json.dumps(tree.fields))
+    mock_set_next_auto_inc.assert_called_once_with(etcd_client, 'foo', 'bar')
 
 
 def test_get_pk_field():
