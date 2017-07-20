@@ -54,12 +54,12 @@ def _get_next_auto_inc(etcd_client, db, tbl):
         return 1
 
 def _set_next_auto_inc(etcd_client, db, tbl):
-    n = _get_next_auto_inc(etcd_client, db, tbl)
+    auto_inc_value = _get_next_auto_inc(etcd_client, db, tbl)
     key = '/{db}/{tbl}/_auto_inc'.format(
         db=db,
         tbl=tbl,
     )
-    etcd_client.write(key, n + 1)
+    etcd_client.write(key, auto_inc_value + 1)
 
 
 
