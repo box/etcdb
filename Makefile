@@ -68,7 +68,7 @@ test: ## run tests quickly with the default Python
 	py.test -x --cov=etcdb --cov-report term-missing tests/unit
 
 test-functional: ## run functional tests. Vagrant machines must run.
-	py.test -xv tests/functional
+	py.test -sxv tests/functional
 
 
 test-all: ## run tests on every Python version with tox

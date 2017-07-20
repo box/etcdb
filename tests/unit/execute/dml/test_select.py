@@ -1,7 +1,10 @@
+import mock
 import pytest
+from pyetcd import EtcdResult
 
 from etcdb.eval_expr import EtcdbFunction, etcdb_count
-from etcdb.execute.dml.select import eval_row, prepare_columns, group_result_set
+from etcdb.execute.dml.select import eval_row, prepare_columns, \
+    group_result_set, get_row_by_primary_key
 from etcdb.resultset import ColumnSet, Column, Row, ResultSet
 from etcdb.sqlparser.sql_tree import SQLTree
 
@@ -225,3 +228,23 @@ def test_group_result_set(rs, row, expressions, result):
     print('Expected: %s' % result)
     print('Actual: %s' % actual)
     assert actual == result
+
+
+@mock.patch('etcdb.execute.dml.select.get_table_columns')
+def test_get_row_by_primary_key_correct_fields_order(mock_get_table_columns):
+    cs = ColumnSet()
+    cs.add(Column('id'))
+    cs.add(Column('name'))
+    mock_get_table_columns.return_value = cs
+
+    mock_etcd_client = mock.Mock()
+    mock_response = mock.Mock()
+    mock_response.headers = {'X-Etcd-Index': 111}
+    mock_response.content = '{"action":"get","node":{"key":"/foo/bar/2","value":"{\\"name\\": \\"aaaa\\", \\"id\\": 2}","modifiedIndex":651557,"createdIndex":651557}}'
+
+    mock_etcd_client.read.return_value = EtcdResult(mock_response)
+    actual = get_row_by_primary_key(mock_etcd_client, 'foo', 'bar', 2)
+    expected = Row((2, 'aaaa'))
+    print('Expected: %s' % expected)
+    print('Actual: %s' % actual)
+    assert actual == expected
