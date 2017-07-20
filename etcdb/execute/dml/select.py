@@ -269,10 +269,11 @@ def execute_select(etcd_client, tree, db):
         lock = ReadLock(etcd_client, db, tree.table)
         lock.acquire()
 
-        tree = fix_tree_star(tree, etcd_client, db, tree.table)
-        result_set = execute_select_plain(etcd_client, tree, db)
-
-        lock.release()
+        try:
+            tree = fix_tree_star(tree, etcd_client, db, tree.table)
+            result_set = execute_select_plain(etcd_client, tree, db)
+        finally:
+            lock.release()
     else:
         result_set = execute_select_no_table(tree)
 
