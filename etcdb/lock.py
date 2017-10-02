@@ -132,6 +132,8 @@ class Lock(object):
                 self._etcd_client.update_ttl(key, ttl)
                 time.sleep(ttl/2.0)
                 ttl *= 2
+                if ttl > LOCK_WAIT_TIMEOUT/2:
+                    ttl = LOCK_WAIT_TIMEOUT/2
             except (EtcdKeyNotFound, KeyboardInterrupt):
                 break
 
