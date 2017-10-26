@@ -1,25 +1,14 @@
+# noinspection PyPackageRequirements
 import mock
+# noinspection PyPackageRequirements
 import pytest
 from pyetcd import EtcdNodeExist
 
-from etcdb import InternalError, OperationalError, LOCK_WAIT_TIMEOUT
+from etcdb import LOCK_WAIT_TIMEOUT, OperationalError
 from etcdb.lock import Lock
 
 
-def test_lock_sets_attributes(etcdb_connection):
-    l = Lock(etcdb_connection.client, 'foo', 'bar', lock_id='some_lock')
-    assert l._db == 'foo'
-    assert l._tbl == 'bar'
-    assert l._id == 'some_lock'
-    assert l._lock_prefix is None
-
-
-def test_acquire_raises(etcdb_connection):
-    l = Lock(etcdb_connection.client, 'foo', 'bar', lock_id='some_lock')
-    with pytest.raises(InternalError):
-        l.acquire()
-
-
+# noinspection PyUnresolvedReferences
 @pytest.mark.parametrize('db, tbl, lock_prefix, lock_name, key', [
     (
         'foo', 'bar', 'some_prefix', 'some_lock',
@@ -36,10 +25,10 @@ def test_acquire(mock_keep_key_alive, etcdb_connection,
                  key):
     etcdb_connection._client = mock.Mock()
 
-    l = Lock(etcdb_connection.client, db, tbl, lock_id=lock_name)
-    l._lock_prefix = lock_prefix
+    lock = Lock(etcdb_connection.client, db, tbl, lock_id=lock_name)
+    lock._lock_prefix = lock_prefix
 
-    l.acquire()
+    lock.acquire()
 
     etcdb_connection.client.compare_and_swap.assert_called_once_with(
         key, '', ttl=1, prev_exist=False
@@ -47,6 +36,7 @@ def test_acquire(mock_keep_key_alive, etcdb_connection,
     mock_keep_key_alive.assert_called_once_with(key, 1)
 
 
+# noinspection PyUnresolvedReferences
 @mock.patch('etcdb.lock.time')
 @mock.patch.object(Lock, '_keep_key_alive')
 def test_acquire_after_2nd(mock_keep_key_alive, mock_time,
@@ -55,19 +45,20 @@ def test_acquire_after_2nd(mock_keep_key_alive, mock_time,
     mock_time.time.side_effect = [100, 101, 102]
     etcdb_connection._client = mock.Mock()
 
-    l = Lock(etcdb_connection.client, 'foo', 'bar', lock_id='some_lock')
-    l._lock_prefix = 'some_prefix'
+    lock = Lock(etcdb_connection.client, 'foo', 'bar', lock_id='some_lock')
+    lock._lock_prefix = 'some_prefix'
 
     etcdb_connection.client.compare_and_swap.side_effect = [
         EtcdNodeExist,
         None
     ]
-    l.acquire()
+    lock.acquire()
 
     assert etcdb_connection.client.compare_and_swap.call_count == 2
     assert mock_keep_key_alive.call_count == 1
 
 
+# noinspection PyUnusedLocal,PyUnresolvedReferences
 @mock.patch('etcdb.lock.time')
 @mock.patch.object(Lock, '_keep_key_alive')
 def test_acquire_raises_after_lock_wait(mock_keep_key_alive,
@@ -78,12 +69,12 @@ def test_acquire_raises_after_lock_wait(mock_keep_key_alive,
     etcdb_connection._client = mock.Mock()
     etcdb_connection._client.timeout = 123
 
-    l = Lock(etcdb_connection.client, 'foo', 'bar', lock_id='some_lock')
-    l._lock_prefix = 'some_prefix'
+    lock = Lock(etcdb_connection.client, 'foo', 'bar', lock_id='some_lock')
+    lock._lock_prefix = 'some_prefix'
 
     etcdb_connection.client.compare_and_swap.side_effect = [
         EtcdNodeExist,
         EtcdNodeExist
     ]
     with pytest.raises(OperationalError):
-        l.acquire()
+        lock.acquire()
