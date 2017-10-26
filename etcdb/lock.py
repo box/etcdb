@@ -35,7 +35,7 @@ class Lock(object):
     def acquire(self, timeout=1):
         """Get a lock
 
-        :param timeout: Timout to acquire a lock.
+        :param timeout: Timeout to acquire a lock.
         :type timeout: int
         :raise InternalError: This class shouldn't be used directly and
             if user doesn't set lock_prefix the method should
@@ -77,9 +77,12 @@ class Lock(object):
 
         if self._id:
             key += "/%s" % self._id
-
-        self._etcd_client.delete(key)
-        active_children()
+        try:
+            self._etcd_client.delete(key)
+        except EtcdKeyNotFound as err:
+            raise InternalError('Failed to release a lock: %s' % err)
+        finally:
+            active_children()
 
     def readers(self):
         """Get list of reader locks.
