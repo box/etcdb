@@ -7,6 +7,7 @@ A client can acquire a reader lock if there are no writers.
 
 
 """
+from os import getppid
 import time
 import uuid
 from multiprocessing import Process, active_children
@@ -137,6 +138,9 @@ class Lock(object):
                 ttl *= 2
                 if ttl > LOCK_WAIT_TIMEOUT/2:
                     ttl = LOCK_WAIT_TIMEOUT/2
+                # If parent exited stop updating the ttl
+                if getppid() == 1:
+                    break
             except (EtcdKeyNotFound, KeyboardInterrupt):
                 break
 
