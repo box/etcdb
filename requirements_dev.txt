@@ -9,3 +9,4 @@ mock
 pytest-cov
 Sphinx
 psutil
+pytest-timeout
