@@ -5,13 +5,11 @@ import lexer
 from etcdb.sqlparser.sql_tree import SQLTree
 
 tokens = lexer.tokens
-_parse_tree = SQLTree()
 
 precedence = (
     ('left', 'AND', 'OR'),
     ('right', 'UNOT'),
 )
-
 
 
 def p_statement(p):
@@ -30,13 +28,21 @@ def p_statement(p):
         | desc_table_statement
         | update_table_statement
         | wait_statement"""
-    _parse_tree.success = True
+    p[1].success = True
+    p[0] = p[1]
 
 
 def p_wait_statement(p):
     """wait_statement : WAIT select_item_list FROM identifier opt_WHERE opt_AFTER"""
-    _parse_tree.query_type = "WAIT"
-    _parse_tree.table = p[4]
+    tree = SQLTree()
+
+    tree.query_type = "WAIT"
+    tree.table = p[4]
+    tree.expressions = p[2]
+    tree.where = p[5]
+    tree.options = p[6]
+    p[0] = tree
+
 
 
 def p_opt_after_empty(p):
@@ -45,14 +51,21 @@ def p_opt_after_empty(p):
 
 def p_opt_after(p):
     """opt_AFTER : AFTER NUMBER"""
-    _parse_tree.options['after'] = int(p[2])
+    after = {
+        'after': int(p[2])
+    }
+    p[0] = after
+
 
 
 def p_update_table_statement(p):
     """update_table_statement : UPDATE identifier SET col_expr_list opt_WHERE """
-    _parse_tree.query_type = "UPDATE"
-    _parse_tree.table = p[2]
-    _parse_tree.expressions = p[4]
+    tree = SQLTree()
+    tree.query_type = "UPDATE"
+    tree.table = p[2]
+    tree.expressions = p[4]
+    tree.where = p[5]
+    p[0] = tree
 
 
 def p_col_expr_list_one(p):
@@ -73,21 +86,27 @@ def p_col_expr(p):
 
 def p_desc_table_statement(p):
     """desc_table_statement : DESC identifier"""
-    _parse_tree.table = p[2]
-    _parse_tree.query_type = "DESC_TABLE"
+    tree = SQLTree()
+    tree.table = p[2]
+    tree.query_type = "DESC_TABLE"
+    p[0] = tree
 
 
 def p_drop_database_statement(p):
     """drop_database_statement : DROP DATABASE identifier"""
-    _parse_tree.db = p[3]
-    _parse_tree.query_type = "DROP_DATABASE"
+    tree = SQLTree()
+    tree.db = p[3]
+    tree.query_type = "DROP_DATABASE"
+    p[0] = tree
 
 
 def p_drop_table_statement(p):
     """drop_table_statement : DROP TABLE identifier opt_IF_EXISTS"""
-    _parse_tree.table = p[3]
-    _parse_tree.query_type = "DROP_TABLE"
-    _parse_tree.options['if_exists'] = p[4]
+    tree = SQLTree()
+    tree.table = p[3]
+    tree.query_type = "DROP_TABLE"
+    tree.options['if_exists'] = p[4]
+    p[0] = tree
 
 
 def p_opt_if_exists_empty(p):
@@ -102,8 +121,9 @@ def p_opt_if_exists(p):
 
 def p_insert_statement(p):
     """insert_statement : INSERT INTO identifier opt_fieldlist VALUES '(' values_list ')'"""
-    _parse_tree.query_type = "INSERT"
-    _parse_tree.table = p[3]
+    tree = SQLTree()
+    tree.query_type = "INSERT"
+    tree.table = p[3]
     n_fields = len(p[4])
     n_values = len(p[7])
     if n_fields != n_values:
@@ -113,7 +133,9 @@ def p_insert_statement(p):
         )
         raise SQLParserError(msg)
     for i in xrange(n_fields):
-        _parse_tree.fields[p[4][i]] = p[7][i]
+        tree.fields[p[4][i]] = p[7][i]
+
+    p[0] = tree
 
 
 def p_opt_fieldlist_empty(p):
@@ -157,45 +179,61 @@ def p_values_list_many(p):
 def p_set_statement(p):
     """set_statement : set_autocommit_statement
         | set_names_statement"""
+    p[0] = p[1]
 
 
 def p_set_names_statement(p):
     """set_names_statement : SET NAMES STRING"""
-    _parse_tree.query_type = "SET_NAMES"
+    tree = SQLTree()
+    tree.query_type = "SET_NAMES"
+    p[0] = tree
 
 
 def p_set_statement_autocommit(p):
     """set_autocommit_statement : SET AUTOCOMMIT '=' NUMBER"""
-    _parse_tree.query_type = "SET_AUTOCOMMIT"
-    _parse_tree.options['autocommit'] = int(p[4])
+    tree = SQLTree()
+    tree.query_type = "SET_AUTOCOMMIT"
+    tree.options['autocommit'] = int(p[4])
+    p[0] = tree
 
 
 def p_commit_statement(p):
     """commit_statement : COMMIT"""
-    _parse_tree.query_type = "COMMIT"
+    tree = SQLTree()
+    tree.query_type = "COMMIT"
+    p[0] = tree
 
 
 def p_create_table_statement(p):
     """create_table_statement : CREATE TABLE identifier '(' create_definition_list ')'"""
-    _parse_tree.query_type = "CREATE_TABLE"
-    _parse_tree.table = p[3]
+    tree = SQLTree()
+    tree.query_type = "CREATE_TABLE"
+    tree.table = p[3]
+    tree.fields = p[5]
+    p[0] = tree
 
 
 def p_create_database_statement(p):
     """create_database_statement : CREATE DATABASE identifier"""
-    _parse_tree.query_type = "CREATE_DATABASE"
-    _parse_tree.db = p[3]
+    tree = SQLTree()
+    tree.query_type = "CREATE_DATABASE"
+    tree.db = p[3]
+    p[0] = tree
 
 
 def p_show_databases_statement(p):
     """show_databases_statement : SHOW DATABASES"""
-    _parse_tree.query_type = "SHOW_DATABASES"
+    tree = SQLTree()
+    tree.query_type = "SHOW_DATABASES"
+    p[0] = tree
 
 
 def p_use_database_statement(p):
     """use_database_statement : USE identifier"""
-    _parse_tree.query_type = "USE_DATABASE"
-    _parse_tree.db = p[2]
+    tree = SQLTree()
+    tree.query_type = "USE_DATABASE"
+    tree.db = p[2]
+    p[0] = tree
 
 
 def p_identifier(p):
@@ -208,14 +246,23 @@ def p_identifier_escaped(p):
     p[0] = p[2]
 
 
-def p_create_definition_list(p):
-    """create_definition_list : create_definition
-        | create_definition_list ',' create_definition"""
+def p_create_definition_list_one(p):
+    """create_definition_list : create_definition"""
+    p[0] = {
+        p[1][0]: p[1][1]
+    }
+
+
+def p_create_definition_list_many(p):
+    """create_definition_list : create_definition_list ',' create_definition"""
+    create_definition_list = p[1]
+    create_definition_list[p[3][0]] = p[3][1]
+    p[0] = create_definition_list
 
 
 def p_create_definition(p):
     """create_definition : identifier column_definition"""
-    _parse_tree.fields[p[1]] = p[2]
+    p[0] = p[1], p[2]
 
 
 def p_column_definition(p):
@@ -321,27 +368,43 @@ def p_q_STRING_EMPTY(p):
 
 def p_select_statement(p):
     """select_statement : SELECT select_item_list opt_FROM opt_WHERE opt_ORDER_BY opt_LIMIT"""
-    _parse_tree.query_type = "SELECT"
+    tree = SQLTree()
+    tree.query_type = "SELECT"
+
+    tree.db = p[3][0]
+    tree.table = p[3][1]
+
+    tree.expressions = p[2]
+    tree.where = p[4]
     try:
-        _parse_tree.limit = int(p[6])
+        tree.limit = int(p[6])
     except TypeError:
-        _parse_tree.limit = None
+        tree.limit = None
+    tree.order = p[5]
+    p[0] = tree
 
 
 def p_opt_ORDER_BY_empty(p):
     """opt_ORDER_BY : """
+    p[0] = None
 
 
 def p_opt_ORDER_BY_simple(p):
     """opt_ORDER_BY : ORDER BY identifier opt_ORDER_DIRECTION"""
-    _parse_tree.order['by'] = p[3]
-    _parse_tree.order['direction'] = p[4]
+    order = {
+        'by': p[3],
+        'direction': p[4]
+    }
+    p[0] = order
 
 
 def p_opt_ORDER_BY_extended(p):
     """opt_ORDER_BY : ORDER BY identifier '.' identifier opt_ORDER_DIRECTION"""
-    _parse_tree.order['by'] = p[5]
-    _parse_tree.order['direction'] = p[6]
+    order = {
+        'by': p[5],
+        'direction': p[6]
+    }
+    p[0] = order
 
 
 def p_opt_ORDER_DIRECTION_empty(p):
@@ -367,28 +430,30 @@ def p_opt_LIMIT(p):
 
 def p_show_tables_statement(p):
     """show_tables_statement : SHOW opt_FULL TABLES"""
-    _parse_tree.query_type = "SHOW_TABLES"
-    _parse_tree.options['full'] = p[2]
+    tree = SQLTree()
+    tree.query_type = "SHOW_TABLES"
+    tree.options['full'] = p[2]
+    p[0] = tree
 
 
 def p_opt_from_empty(p):
     """opt_FROM : """
+    p[0] = None, None
 
 
 def p_opt_from(p):
     """opt_FROM : FROM table_reference"""
-    _parse_tree.table = p[2]
+    p[0] = p[2]
 
 
 def p_table_reference(p):
     """table_reference : identifier"""
-    p[0] = p[1]
+    p[0] = None, p[1]
 
 
 def p_table_reference_w_database(p):
     """table_reference : identifier '.' identifier"""
-    _parse_tree.db = p[1]
-    p[0] = p[3]
+    p[0] = p[1], p[3]
 
 
 def p_opt_FULL_empty(p):
@@ -403,20 +468,24 @@ def p_opt_FULL(p):
 
 def p_select_item_list_select_item(p):
     """select_item_list : select_item """
-    _parse_tree.expressions.append(p[1])
+    p[0] = [p[1]]
 
 
 def p_select_item_list(p):
     """select_item_list : select_item_list ',' select_item """
-    _parse_tree.expressions.append(p[3])
+    select_item_list = p[1]
+    select_item_list .append(p[3])
+    p[0] = select_item_list
 
 
 def p_select_item_list_star(p):
     """select_item_list : '*'"""
-    _parse_tree.expressions.append((
-        ('*', None),
-        None
-    ))
+    p[0] = [
+        (
+            ('*', None),
+            None
+        )
+    ]
 
 
 def p_select_item(p):
@@ -447,11 +516,12 @@ def p_table_wild(p):
 
 def p_opt_WHERE_empty(p):
     """opt_WHERE : """
+    p[0] = None
 
 
 def p_opt_WHERE(p):
     """opt_WHERE : WHERE expr"""
-    _parse_tree.where = p[2]
+    p[0] = p[2]
 
 
 def p_expr_OR(p):
@@ -593,23 +663,24 @@ def p_function_call_count_star(p):
 
 def p_delete_statement(p):
     """delete_statement : DELETE FROM identifier opt_WHERE"""
-    _parse_tree.query_type = 'DELETE'
-    _parse_tree.table = p[3]
+    tree = SQLTree()
+
+    tree.query_type = 'DELETE'
+    tree.table = p[3]
+    tree.where = p[4]
+    p[0] = tree
 
 
 def p_error(t):
     if t:
-        msg = "Query: {query}\n" \
-              "Syntax error at lexeme '{value}' (type: '{type}'). " \
-              "Line: {lineno}, position: {lexpos}".format(query=_parse_tree.query,
-                                                          value=t.value,
+        msg = "Syntax error at lexeme '{value}' (type: '{type}'). " \
+              "Line: {lineno}, position: {lexpos}".format(value=t.value,
                                                           type=t.type,
                                                           lineno=t.lineno,
                                                           lexpos=t.lexpos)
         raise SQLParserError(msg)
     else:
-        raise SQLParserError("Query: {query}\nSyntax error".format(
-            query=_parse_tree.query))
+        raise SQLParserError("Syntax error")
 
 
 class SQLParser(object):
@@ -617,14 +688,7 @@ class SQLParser(object):
         self._parser = yacc.yacc(debug=True)
 
     def parse(self, *args, **kwargs):
-        # global _parse_tree
-        # del _parse_tree
-        _parse_tree.reset()
-        _parse_tree.query = args[0]
-        log = logging.getLogger()
-        # kwargs['debug'] = log
-        self._parser.parse(*args, **kwargs)
-        return _parse_tree
+        return self._parser.parse(*args, **kwargs)
 
 
 class SQLParserError(Exception):
