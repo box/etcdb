@@ -19,8 +19,7 @@ from etcdb.lock import Lock
         '/foo/bar/some_prefix'
     )
 ])
-@mock.patch.object(Lock, '_keep_key_alive')
-def test_acquire(mock_keep_key_alive, etcdb_connection,
+def test_acquire(etcdb_connection,
                  db, tbl, lock_prefix, lock_name,
                  key):
     etcdb_connection._client = mock.Mock()
@@ -33,13 +32,15 @@ def test_acquire(mock_keep_key_alive, etcdb_connection,
     etcdb_connection.client.compare_and_swap.assert_called_once_with(
         key, '', ttl=1, prev_exist=False
     )
-    mock_keep_key_alive.assert_called_once_with(key, 1)
+    etcdb_connection.client.update_ttl.assert_called_once_with(
+        key,
+        LOCK_WAIT_TIMEOUT
+    )
 
 
 # noinspection PyUnresolvedReferences
 @mock.patch('etcdb.lock.time')
-@mock.patch.object(Lock, '_keep_key_alive')
-def test_acquire_after_2nd(mock_keep_key_alive, mock_time,
+def test_acquire_after_2nd(mock_time,
                            etcdb_connection):
 
     mock_time.time.side_effect = [100, 101, 102]
@@ -55,14 +56,12 @@ def test_acquire_after_2nd(mock_keep_key_alive, mock_time,
     lock.acquire()
 
     assert etcdb_connection.client.compare_and_swap.call_count == 2
-    assert mock_keep_key_alive.call_count == 1
+    assert etcdb_connection.client.update_ttl.call_count == 1
 
 
 # noinspection PyUnusedLocal,PyUnresolvedReferences
 @mock.patch('etcdb.lock.time')
-@mock.patch.object(Lock, '_keep_key_alive')
-def test_acquire_raises_after_lock_wait(mock_keep_key_alive,
-                                        mock_time,
+def test_acquire_raises_after_lock_wait(mock_time,
                                         etcdb_connection):
 
     mock_time.time.side_effect = [100, 101, 200 + LOCK_WAIT_TIMEOUT]

@@ -7,10 +7,8 @@ A client can acquire a reader lock if there are no writers.
 
 
 """
-from os import getppid
 import time
 import uuid
-from multiprocessing import Process, active_children
 
 from pyetcd import EtcdNodeExist, EtcdKeyNotFound
 
@@ -61,7 +59,7 @@ class Lock(object):
                     '',
                     ttl=timeout,
                     prev_exist=False)
-                self._keep_key_alive(key, timeout)
+                self._etcd_client.update_ttl(key, LOCK_WAIT_TIMEOUT)
                 return self._id
             except EtcdNodeExist:
                 time.sleep(timeout/2.0)
@@ -82,8 +80,6 @@ class Lock(object):
             self._etcd_client.delete(key)
         except EtcdKeyNotFound as err:
             raise InternalError('Failed to release a lock: %s' % err)
-        finally:
-            active_children()
 
     def readers(self):
         """Get list of reader locks.
@@ -124,25 +120,6 @@ class Lock(object):
         except (KeyError, EtcdKeyNotFound):
             pass
         return locks
-
-    def _keep_key_alive(self, key, timeout):
-        proc = Process(target=self._refresh_ttl, args=(key, timeout))
-        proc.start()
-
-    def _refresh_ttl(self, key, timeout):
-        ttl = timeout
-        while True:
-            try:
-                self._etcd_client.update_ttl(key, ttl)
-                time.sleep(ttl/2.0)
-                ttl *= 2
-                if ttl > LOCK_WAIT_TIMEOUT/2:
-                    ttl = LOCK_WAIT_TIMEOUT/2
-                # If parent exited stop updating the ttl
-                if getppid() == 1:
-                    break
-            except (EtcdKeyNotFound, KeyboardInterrupt):
-                break
 
 
 class MetaLock(Lock):
