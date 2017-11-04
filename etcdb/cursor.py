@@ -5,9 +5,10 @@ import uuid
 from multiprocessing import Process
 
 from multiprocessing import active_children
-from pyetcd import EtcdNodeExist, EtcdKeyNotFound
+from pyetcd import EtcdNodeExist, EtcdKeyNotFound, EtcdRaftInternal
 
-from etcdb import ProgrammingError, OperationalError, LOCK_WAIT_TIMEOUT
+from etcdb import ProgrammingError, OperationalError, LOCK_WAIT_TIMEOUT, \
+    InternalError
 from etcdb.eval_expr import eval_expr
 from etcdb.execute.ddl.create import create_database, create_table
 from etcdb.execute.ddl.drop import drop_database, drop_table
@@ -124,7 +125,9 @@ class Cursor(object):
         :type query: str
         :param args: Optional query arguments.
         :type args: tuple
-        :raise ProgrammingError: if query can't be parsed."""
+        :raise ProgrammingError: if query can't be parsed.
+        :raise InternalError: If etcd is not ready to serve request
+        """
 
         query = self.morgify(query, args)
 
@@ -141,45 +144,49 @@ class Cursor(object):
         self._result_set = None
         self._rowcount = 0
 
-        if tree.query_type == "SHOW_DATABASES":
-            self._result_set = show_databases(self.connection.client)
+        try:
+            if tree.query_type == "SHOW_DATABASES":
+                self._result_set = show_databases(self.connection.client)
 
-        elif tree.query_type == "CREATE_DATABASE":
-            create_database(self.connection.client, tree)
+            elif tree.query_type == "CREATE_DATABASE":
+                create_database(self.connection.client, tree)
 
-        elif tree.query_type == "DROP_DATABASE":
-            drop_database(self.connection.client, tree)
+            elif tree.query_type == "DROP_DATABASE":
+                drop_database(self.connection.client, tree)
 
-        elif tree.query_type == "USE_DATABASE":
-            self._db = use_database(self.connection.client, tree)
+            elif tree.query_type == "USE_DATABASE":
+                self._db = use_database(self.connection.client, tree)
 
-        elif tree.query_type == "CREATE_TABLE":
-            create_table(self.connection.client, tree, db=self._db)
+            elif tree.query_type == "CREATE_TABLE":
+                create_table(self.connection.client, tree, db=self._db)
 
-        elif tree.query_type == "DROP_TABLE":
-            drop_table(self.connection.client, tree, db=self._db)
+            elif tree.query_type == "DROP_TABLE":
+                drop_table(self.connection.client, tree, db=self._db)
 
-        elif tree.query_type == "SHOW_TABLES":
-            self._result_set = show_tables(self.connection.client, tree,
-                                           db=self._db)
-        elif tree.query_type == "DESC_TABLE":
-            self._result_set = desc_table(self.connection.client, tree,
-                                          db=self._db)
-        elif tree.query_type == "INSERT":
-            self._rowcount = insert(self.connection.client, tree,
-                                    db=self._db)
-        elif tree.query_type == 'SELECT':
-            self._result_set = execute_select(self.connection.client, tree,
+            elif tree.query_type == "SHOW_TABLES":
+                self._result_set = show_tables(self.connection.client, tree,
+                                               db=self._db)
+            elif tree.query_type == "DESC_TABLE":
+                self._result_set = desc_table(self.connection.client, tree,
                                               db=self._db)
-        elif tree.query_type == 'WAIT':
-            self._result_set = execute_wait(self.connection.client, tree,
-                                            db=self._db)
-        elif tree.query_type == "UPDATE":
-            self._rowcount = execute_update(self.connection.client, tree,
-                                            db=self._db)
-        elif tree.query_type == "DELETE":
-            self._rowcount = execute_delete(self.connection.client, tree,
-                                            db=self._db)
+            elif tree.query_type == "INSERT":
+                self._rowcount = insert(self.connection.client, tree,
+                                        db=self._db)
+            elif tree.query_type == 'SELECT':
+                self._result_set = execute_select(self.connection.client, tree,
+                                                  db=self._db)
+            elif tree.query_type == 'WAIT':
+                self._result_set = execute_wait(self.connection.client, tree,
+                                                db=self._db)
+            elif tree.query_type == "UPDATE":
+                self._rowcount = execute_update(self.connection.client, tree,
+                                                db=self._db)
+            elif tree.query_type == "DELETE":
+                self._rowcount = execute_delete(self.connection.client, tree,
+                                                db=self._db)
+        except EtcdRaftInternal as err:
+            raise InternalError(err)
+
         if self._result_set is not None:
             self._rowcount = self._result_set.n_rows
 

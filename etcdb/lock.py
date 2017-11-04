@@ -7,14 +7,13 @@ A client can acquire a reader lock if there are no writers.
 
 
 """
-from os import getppid
 import time
 import uuid
-from multiprocessing import Process, active_children
 
 from pyetcd import EtcdNodeExist, EtcdKeyNotFound
 
-from etcdb import LOCK_WAIT_TIMEOUT, OperationalError, InternalError
+from etcdb import LOCK_WAIT_TIMEOUT, OperationalError, InternalError, \
+    META_LOCK_WAIT_TIMEOUT
 
 
 class Lock(object):
@@ -33,11 +32,12 @@ class Lock(object):
         self._lock_prefix = lock_prefix
         self._id = lock_id
 
-    def acquire(self, timeout=1):
+    def acquire(self, timeout=LOCK_WAIT_TIMEOUT, ttl=LOCK_WAIT_TIMEOUT):
         """Get a lock
 
         :param timeout: Timeout to acquire a lock.
         :type timeout: int
+        :param ttl: Place a lock on this time in seconds
         :raise InternalError: This class shouldn't be used directly and
             if user doesn't set lock_prefix the method should
             raise exception."""
@@ -53,15 +53,14 @@ class Lock(object):
         if self._id:
             key += "/%s" % self._id
 
-        expires = time.time() + LOCK_WAIT_TIMEOUT
+        expires = time.time() + timeout
         while time.time() < expires:
             try:
                 self._etcd_client.compare_and_swap(
                     key,
                     '',
-                    ttl=timeout,
+                    ttl=ttl,
                     prev_exist=False)
-                self._keep_key_alive(key, timeout)
                 return self._id
             except EtcdNodeExist:
                 time.sleep(timeout/2.0)
@@ -82,8 +81,6 @@ class Lock(object):
             self._etcd_client.delete(key)
         except EtcdKeyNotFound as err:
             raise InternalError('Failed to release a lock: %s' % err)
-        finally:
-            active_children()
 
     def readers(self):
         """Get list of reader locks.
@@ -125,25 +122,6 @@ class Lock(object):
             pass
         return locks
 
-    def _keep_key_alive(self, key, timeout):
-        proc = Process(target=self._refresh_ttl, args=(key, timeout))
-        proc.start()
-
-    def _refresh_ttl(self, key, timeout):
-        ttl = timeout
-        while True:
-            try:
-                self._etcd_client.update_ttl(key, ttl)
-                time.sleep(ttl/2.0)
-                ttl *= 2
-                if ttl > LOCK_WAIT_TIMEOUT/2:
-                    ttl = LOCK_WAIT_TIMEOUT/2
-                # If parent exited stop updating the ttl
-                if getppid() == 1:
-                    break
-            except (EtcdKeyNotFound, KeyboardInterrupt):
-                break
-
 
 class MetaLock(Lock):
     """Meta lock is needed to place a read or write lock."""
@@ -169,20 +147,21 @@ class WriteLock(Lock):
                                         lock_prefix='_lock_write',
                                         lock_id=lock_id)
 
-    def acquire(self, timeout=1):
+    def acquire(self, timeout=LOCK_WAIT_TIMEOUT, ttl=LOCK_WAIT_TIMEOUT):
         """Get a write lock"""
         meta_lock = MetaLock(self._etcd_client, self._db, self._tbl)
-        meta_lock.acquire(timeout=timeout)
+        meta_lock.acquire(timeout=META_LOCK_WAIT_TIMEOUT,
+                          ttl=META_LOCK_WAIT_TIMEOUT)
 
         try:
-            expires = time.time() + LOCK_WAIT_TIMEOUT
-            wait_time = timeout
+            expires = time.time() + timeout
+            sleep_time = 1
             while time.time() < expires:
                 if not self.writers() and not self.readers():
-                    super(WriteLock, self).acquire(timeout=timeout)
+                    super(WriteLock, self).acquire(timeout=timeout, ttl=ttl)
                     return self._id
-                time.sleep(wait_time)
-                wait_time *= 2
+                time.sleep(sleep_time)
+                sleep_time *= 2
 
             raise OperationalError('Lock wait timeout')
         finally:
@@ -200,20 +179,22 @@ class ReadLock(Lock):
                                        lock_prefix='_lock_read',
                                        lock_id=lock_id)
 
-    def acquire(self, timeout=1):
+    def acquire(self, timeout=LOCK_WAIT_TIMEOUT, ttl=LOCK_WAIT_TIMEOUT):
         """Get a read lock"""
         meta_lock = MetaLock(self._etcd_client, self._db, self._tbl)
-        meta_lock.acquire(timeout=timeout)
+        meta_lock.acquire(timeout=META_LOCK_WAIT_TIMEOUT,
+                          ttl=META_LOCK_WAIT_TIMEOUT)
 
         try:
-            expires = time.time() + LOCK_WAIT_TIMEOUT
-            wait_time = timeout
+            expires = time.time() + timeout
+            sleep_time = 1
             while time.time() < expires:
                 if not self.writers():
-                    super(ReadLock, self).acquire()
+                    super(ReadLock, self).acquire(timeout=timeout,
+                                                  ttl=ttl)
                     return self._id
-                time.sleep(wait_time)
-                wait_time *= 2
+                time.sleep(sleep_time)
+                sleep_time *= 2
 
             raise OperationalError('Lock wait timeout')
         finally:

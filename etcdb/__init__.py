@@ -21,7 +21,7 @@ from .etcdtimestamp import EtcdTimestamp
 
 __author__ = 'Box TechOps Database Team'
 __email__ = 'oss@box.com'
-__version__ = '1.5.8'
+__version__ = '1.5.9'
 
 
 def _split_version(version):
@@ -47,6 +47,7 @@ Question mark style, e.g. ...WHERE name=?."""
 
 NULL = None
 LOCK_WAIT_TIMEOUT = 50
+META_LOCK_WAIT_TIMEOUT = LOCK_WAIT_TIMEOUT * 2
 WAIT_WAIT_TIMEOUT = 5
 ETCDTABLELOCK = Enum('EtcdTableLock', 'read write')
 
