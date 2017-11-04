@@ -27,14 +27,10 @@ def test_acquire(etcdb_connection,
     lock = Lock(etcdb_connection.client, db, tbl, lock_id=lock_name)
     lock._lock_prefix = lock_prefix
 
-    lock.acquire()
+    lock.acquire(timeout=100, ttl=120)
 
     etcdb_connection.client.compare_and_swap.assert_called_once_with(
-        key, '', ttl=1, prev_exist=False
-    )
-    etcdb_connection.client.update_ttl.assert_called_once_with(
-        key,
-        LOCK_WAIT_TIMEOUT
+        key, '', ttl=120, prev_exist=False
     )
 
 
@@ -56,7 +52,6 @@ def test_acquire_after_2nd(mock_time,
     lock.acquire()
 
     assert etcdb_connection.client.compare_and_swap.call_count == 2
-    assert etcdb_connection.client.update_ttl.call_count == 1
 
 
 # noinspection PyUnusedLocal,PyUnresolvedReferences
