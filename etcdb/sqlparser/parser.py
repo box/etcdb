@@ -1,10 +1,11 @@
-import logging
-
 import ply.yacc as yacc
-import lexer
+import ply.lex as lex
+
+from etcdb.sqlparser import etcdb_lexer
 from etcdb.sqlparser.sql_tree import SQLTree
 
-tokens = lexer.tokens
+# noinspection PyUnresolvedReferences
+from etcdb_lexer import tokens
 
 precedence = (
     ('left', 'AND', 'OR'),
@@ -44,7 +45,6 @@ def p_wait_statement(p):
     p[0] = tree
 
 
-
 def p_opt_after_empty(p):
     """opt_AFTER : """
 
@@ -55,7 +55,6 @@ def p_opt_after(p):
         'after': int(p[2])
     }
     p[0] = after
-
 
 
 def p_update_table_statement(p):
@@ -614,11 +613,6 @@ def p_simple_expr_identifier_full(p):
     p[0] = ('IDENTIFIER', p[1] + '.' + p[3])
 
 
-#def p_simple_expr_string(p):
-#    """simple_expr : STRING_VALUE"""
-#    p[0] = ('STRING', p[1])
-
-
 def p_simple_expr_parent(p):
     """simple_expr : '(' expr ')'"""
     p[0] = ('expr', p[2])
@@ -685,10 +679,20 @@ def p_error(t):
 
 class SQLParser(object):
     def __init__(self):
-        self._parser = yacc.yacc(debug=True)
+        self._parser = yacc.yacc(debug=False)
 
     def parse(self, *args, **kwargs):
-        return self._parser.parse(*args, **kwargs)
+
+        try:
+            # noinspection PyUnusedLocal
+            lexer = lex.lex(module=etcdb_lexer)
+            tree = self._parser.parse(*args, **kwargs)
+            tree.query = args[0]
+
+            return tree
+        except SQLParserError:
+            self._parser.restart()
+            raise
 
 
 class SQLParserError(Exception):

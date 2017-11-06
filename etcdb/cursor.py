@@ -1,15 +1,8 @@
-import json
+from pprint import pprint
 
-import time
-import uuid
-from multiprocessing import Process
+from pyetcd import EtcdKeyNotFound, EtcdRaftInternal
 
-from multiprocessing import active_children
-from pyetcd import EtcdNodeExist, EtcdKeyNotFound, EtcdRaftInternal
-
-from etcdb import ProgrammingError, OperationalError, LOCK_WAIT_TIMEOUT, \
-    InternalError
-from etcdb.eval_expr import eval_expr
+from etcdb import ProgrammingError, InternalError
 from etcdb.execute.ddl.create import create_database, create_table
 from etcdb.execute.ddl.drop import drop_database, drop_table
 from etcdb.execute.dml.delete import execute_delete
@@ -136,7 +129,8 @@ class Cursor(object):
         try:
             tree = self._sql_parser.parse(query)
         except SQLParserError as err:
-            raise ProgrammingError(err)
+            raise ProgrammingError('Error while parsing query: %s: %s'
+                                   % (query, err))
 
         if not self._db:
             self._db = tree.db

@@ -1,4 +1,4 @@
-import ply.lex as lex
+from __future__ import print_function
 
 states = (
     ('quoted', 'exclusive'),
@@ -42,10 +42,7 @@ def t_quoted_STRING_VALUE(t):
 
 def t_quoted_end(t):
     r"""'"""
-    #t.type = 'STRING_VALUE'
-    #t.value = None
     t.lexer.begin('INITIAL')
-    #return t
 
 
 def t_STRING(t):
@@ -65,5 +62,3 @@ def t_error(t):
 
 def t_quoted_error(t):
     t_error(t)
-
-lexer = lex.lex(debug=False)

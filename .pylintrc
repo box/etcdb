@@ -9,7 +9,7 @@
 
 # Add files or directories to the blacklist. They should be base names, not
 # paths.
-ignore=lexer.py,parser.py,parsetab.py,converters.py,cursor.py,etcddate.py,etcdstring.py,etcdtime.py,etcdtimestamp.py,times.py,FIELD_TYPE.py,sql_tree.py
+ignore=etcdb_lexer.py,parser.py,parsetab.py,converters.py,cursor.py,etcddate.py,etcdstring.py,etcdtime.py,etcdtimestamp.py,times.py,FIELD_TYPE.py,sql_tree.py
 
 # Pickle collected data for later comparisons.
 persistent=yes
