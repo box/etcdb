@@ -1,4 +1,4 @@
-import ply.lex as lex
+from __future__ import print_function
 
 states = (
     ('quoted', 'exclusive'),
@@ -62,6 +62,3 @@ def t_error(t):
 
 def t_quoted_error(t):
     t_error(t)
-
-
-lexer = lex.lex(debug=False)

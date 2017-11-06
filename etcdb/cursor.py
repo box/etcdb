@@ -1,3 +1,5 @@
+from pprint import pprint
+
 from pyetcd import EtcdKeyNotFound, EtcdRaftInternal
 
 from etcdb import ProgrammingError, InternalError
@@ -127,7 +129,8 @@ class Cursor(object):
         try:
             tree = self._sql_parser.parse(query)
         except SQLParserError as err:
-            raise ProgrammingError(err)
+            raise ProgrammingError('Error while parsing query: %s: %s'
+                                   % (query, err))
 
         if not self._db:
             self._db = tree.db

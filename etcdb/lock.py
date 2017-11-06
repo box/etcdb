@@ -14,6 +14,7 @@ from pyetcd import EtcdNodeExist, EtcdKeyNotFound
 
 from etcdb import LOCK_WAIT_TIMEOUT, OperationalError, InternalError, \
     META_LOCK_WAIT_TIMEOUT
+from etcdb.log import LOG
 
 
 class Lock(object):
@@ -53,6 +54,8 @@ class Lock(object):
         if self._id:
             key += "/%s" % self._id
 
+        LOG.debug('Lock: %s requested', key)
+
         expires = time.time() + timeout
         while time.time() < expires:
             try:
@@ -61,9 +64,10 @@ class Lock(object):
                     '',
                     ttl=ttl,
                     prev_exist=False)
+                LOG.debug('Lock: %s acquired', key)
                 return self._id
             except EtcdNodeExist:
-                time.sleep(timeout/2.0)
+                pass
 
         raise OperationalError('Lock wait timeout')
 
@@ -79,6 +83,7 @@ class Lock(object):
             key += "/%s" % self._id
         try:
             self._etcd_client.delete(key)
+            LOG.debug('Lock: %s released', key)
         except EtcdKeyNotFound as err:
             raise InternalError('Failed to release a lock: %s' % err)
 
@@ -155,13 +160,10 @@ class WriteLock(Lock):
 
         try:
             expires = time.time() + timeout
-            sleep_time = 1
             while time.time() < expires:
                 if not self.writers() and not self.readers():
                     super(WriteLock, self).acquire(timeout=timeout, ttl=ttl)
                     return self._id
-                time.sleep(sleep_time)
-                sleep_time *= 2
 
             raise OperationalError('Lock wait timeout')
         finally:
@@ -187,14 +189,11 @@ class ReadLock(Lock):
 
         try:
             expires = time.time() + timeout
-            sleep_time = 1
             while time.time() < expires:
                 if not self.writers():
                     super(ReadLock, self).acquire(timeout=timeout,
                                                   ttl=ttl)
                     return self._id
-                time.sleep(sleep_time)
-                sleep_time *= 2
 
             raise OperationalError('Lock wait timeout')
         finally:

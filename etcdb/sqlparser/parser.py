@@ -1,8 +1,11 @@
 import ply.yacc as yacc
-import lexer
+import ply.lex as lex
+
+from etcdb.sqlparser import etcdb_lexer
 from etcdb.sqlparser.sql_tree import SQLTree
 
-tokens = lexer.tokens
+# noinspection PyUnresolvedReferences
+from etcdb_lexer import tokens
 
 precedence = (
     ('left', 'AND', 'OR'),
@@ -679,10 +682,13 @@ class SQLParser(object):
         self._parser = yacc.yacc(debug=False)
 
     def parse(self, *args, **kwargs):
+
         try:
-            lexer.lexer.begin('INITIAL')
+            # noinspection PyUnusedLocal
+            lexer = lex.lex(module=etcdb_lexer)
             tree = self._parser.parse(*args, **kwargs)
             tree.query = args[0]
+
             return tree
         except SQLParserError:
             self._parser.restart()
