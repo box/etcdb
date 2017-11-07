@@ -1,6 +1,7 @@
 import ply.yacc as yacc
 import ply.lex as lex
 
+from etcdb import PARSER_LOCK
 from etcdb.sqlparser import etcdb_lexer
 from etcdb.sqlparser.sql_tree import SQLTree
 
@@ -684,6 +685,7 @@ class SQLParser(object):
     def parse(self, *args, **kwargs):
 
         try:
+            PARSER_LOCK.acquire()
             # noinspection PyUnusedLocal
             lexer = lex.lex(module=etcdb_lexer)
             tree = self._parser.parse(*args, **kwargs)
@@ -693,6 +695,8 @@ class SQLParser(object):
         except SQLParserError:
             self._parser.restart()
             raise
+        finally:
+            PARSER_LOCK.release()
 
 
 class SQLParserError(Exception):

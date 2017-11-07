@@ -6,6 +6,7 @@ import time
 
 import logging
 from logging.handlers import WatchedFileHandler
+from threading import Lock
 
 from enum import Enum
 
@@ -50,6 +51,7 @@ LOCK_WAIT_TIMEOUT = 50
 META_LOCK_WAIT_TIMEOUT = LOCK_WAIT_TIMEOUT * 2
 WAIT_WAIT_TIMEOUT = 5
 ETCDTABLELOCK = Enum('EtcdTableLock', 'read write')
+PARSER_LOCK = Lock()
 
 
 def Timestamp(year, month, day, hour, minute, second):  # pylint: disable=invalid-name,too-many-arguments
