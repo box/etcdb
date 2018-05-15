@@ -1,7 +1,11 @@
 """Implement SELECT query."""
 import json
 
-from etcdb import OperationalError
+import time
+
+from pyetcd import EtcdException
+
+from etcdb import OperationalError, InternalError
 from etcdb.eval_expr import eval_expr, EtcdbFunction
 from etcdb.execute.dml.insert import get_table_columns
 from etcdb.log import LOG
@@ -59,8 +63,7 @@ def prepare_columns(tree):
     return columns
 
 
-def get_row_by_primary_key(etcd_client, db, table, primary_key,  # pylint: disable=too-many-arguments
-                           wait=False, wait_index=None):
+def get_row_by_primary_key(etcd_client, db, table, primary_key, **kwargs):
     """
     Read row from etcd by its primary key value.
 
@@ -69,25 +72,35 @@ def get_row_by_primary_key(etcd_client, db, table, primary_key,  # pylint: disab
     :param db:
     :param table:
     :param primary_key: Primary key value.
-    :param wait: If True it will wait for a change in the key
-    :type wait: bool
-    :param wait_index: When waiting you can specify index to wait for.
-    :type wait_index: int
+    :param kwargs: See below.
     :return: Row
     :rtype: Row
+
+    :Keyword Arguments:
+            * **wait** (bool) - If True it will wait for a change in the key.
+            * **wait_index** (int) - When waiting you can specify index to wait for.
     """
-    key = "/{db}/{tbl}/{pk}".format(db=db,
-                                    tbl=table,
-                                    pk=primary_key)
-    kwargs = {}
-    if wait:
-        kwargs['wait'] = True
-        if wait_index:
-            kwargs['waitIndex'] = wait_index
-    if kwargs:
-        etcd_response = etcd_client.read(key, **kwargs)
-    else:
-        etcd_response = etcd_client.read(key)
+    key = "/{db}/{tbl}/{pk}".format(
+        db=db,
+        tbl=table,
+        pk=primary_key
+    )
+    client_kwargs = {}
+    if 'wait' in kwargs:
+        client_kwargs['wait'] = kwargs.get('wait')
+        if 'wait_index' in kwargs:
+            client_kwargs['waitIndex'] = kwargs.get('wait_index')
+    etcd_response = None
+    for i in xrange(30):
+        try:
+            etcd_response = etcd_client.read(key, **client_kwargs)
+            break
+        except EtcdException as err:
+            LOG.warning("Retry #%d after error: %s", i, err)
+            time.sleep(1)
+    if not etcd_response:
+        raise InternalError('Failed to get response from etcd')
+
     row = ()
     field_values = json.loads(etcd_response.node['value'])
     table_columns = get_table_columns(etcd_client, db, table)

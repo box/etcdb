@@ -17,10 +17,11 @@ class EtcdbFunction(object):
     :param group: True if the functions is aggregate function
     :type group: bool
     :param *args: Arguments to pass to function_name"""
-    def __init__(self, function_name, group=False, *args):
-        self._function = function_name
-        self._group = group
-        self._args = args
+    def __init__(self, *args, **kwargs):
+
+        self._function = args[0]
+        self._group = kwargs.get('group', False)
+        self._args = args[1:]
 
     @property
     def function(self):
@@ -74,7 +75,7 @@ def eval_identifier(row, identifier):
         pos = columns.index(Column(identifier_strip))
         return identifier_strip, data[pos]
     except ValueError:
-        raise OperationalError('Unknown identifier %s', identifier_strip)
+        raise OperationalError('Unknown identifier %s' % identifier_strip)
 
 
 def eval_string(value):

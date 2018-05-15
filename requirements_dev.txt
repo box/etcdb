@@ -10,3 +10,4 @@ pytest-cov
 Sphinx
 psutil
 pytest-timeout
+pytest-cov
