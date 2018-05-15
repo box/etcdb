@@ -2,7 +2,13 @@
 # -*- coding: utf-8 -*-
 import os
 
-from pip.req import parse_requirements
+try:  # for pip >= 10
+    # noinspection PyProtectedMember,PyPackageRequirements
+    from pip._internal.req import parse_requirements
+except ImportError:  # for pip <= 9.0.3
+    # noinspection PyPackageRequirements
+    from pip.req import parse_requirements
+
 from setuptools import setup, find_packages
 
 # This is to workaround error: Operation not permitted
@@ -25,7 +31,7 @@ test_requirements = [str(ir.req) for ir in
 
 setup(
     name='etcdb',
-    version='1.5.14',
+    version='1.5.15',
     description="PEP 249 compatible driver for Etcd",
     long_description=readme + '\n\n' + history,
     author="Box TechOps Database Team",
