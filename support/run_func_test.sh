@@ -2,4 +2,4 @@
 
 source /etcdb/support/bootstrap.sh
 
-make -C /etcdb bootstrap test-functional
+make -C /etcdb clean bootstrap test-functional

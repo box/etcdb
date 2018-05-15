@@ -103,6 +103,7 @@ install: clean ## install the package to the active Python's site-packages
 docker-start:
 	@docker run \
 		-v $(shell pwd):/etcdb \
+		--rm \
 		-it \
 		ubuntu:xenial \
 		/bin/bash -l
@@ -110,5 +111,6 @@ docker-start:
 docker-test-func:
 	@docker run \
 		-v $(shell pwd):/etcdb \
+		--rm \
 		ubuntu:xenial \
 		/bin/bash -l /etcdb/support/run_func_test.sh

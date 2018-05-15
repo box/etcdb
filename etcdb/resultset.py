@@ -178,7 +178,7 @@ class ColumnSet(object):
             self._column_position = 0
             raise StopIteration()
 
-    def __getitem__(self, key):
+    def __getitem__(self, key):  # pylint: disable=inconsistent-return-statements
         if isinstance(key, int):
             return self._columns[key]
         else:
