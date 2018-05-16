@@ -1,4 +1,4 @@
-pyetcd>=1.7.2
+pyetcd>=1.9.0
 ply
 click
 enum34
