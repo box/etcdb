@@ -31,7 +31,7 @@ test_requirements = [str(ir.req) for ir in
 
 setup(
     name='etcdb',
-    version='1.5.16',
+    version='1.5.17',
     description="PEP 249 compatible driver for Etcd",
     long_description=readme + '\n\n' + history,
     author="Box TechOps Database Team",
