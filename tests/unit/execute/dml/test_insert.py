@@ -6,12 +6,16 @@ from pyetcd import EtcdResult, EtcdKeyNotFound
 
 from etcdb import IntegrityError
 from etcdb.execute.dml.insert import insert, get_pk_field
+from etcdb.lock import WriteLock
 from etcdb.resultset import Column
 from etcdb.sqlparser.sql_tree import SQLTree
 
 
 @mock.patch('etcdb.execute.dml.insert.get_pk_field')
-def test_insert_duplicate_raises(mock_get_pk_field):
+@mock.patch.object(WriteLock, 'acquire')
+@mock.patch.object(WriteLock, 'release')
+def test_insert_duplicate_raises(mock_release, mock_acquire,
+                                 mock_get_pk_field):
     mock_get_pk_field.return_value = Column('id')
 
     etcd_client = mock.Mock()
@@ -39,7 +43,11 @@ def test_insert_duplicate_raises(mock_get_pk_field):
 
 
 @mock.patch('etcdb.execute.dml.insert.get_pk_field')
-def test_insert(mock_get_pk_field):
+@mock.patch.object(WriteLock, 'acquire')
+@mock.patch.object(WriteLock, 'release')
+@mock.patch('etcdb.execute.dml.insert._set_next_auto_inc')
+def test_insert(mock_set_next_auto_inc,
+                mock_release, mock_acquire, mock_get_pk_field):
     mock_get_pk_field.return_value = Column('id')
 
     etcd_client = mock.Mock()
@@ -51,6 +59,7 @@ def test_insert(mock_get_pk_field):
     insert(etcd_client, tree, 'foo')
     etcd_client.write.assert_called_once_with('/foo/bar/1',
                                               json.dumps(tree.fields))
+    mock_set_next_auto_inc.assert_called_once_with(etcd_client, 'foo', 'bar')
 
 
 def test_get_pk_field():

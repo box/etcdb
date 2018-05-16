@@ -1208,3 +1208,21 @@ def test_delete_with_in(parser):
 
                            )
                           )
+
+def test_select_long(parser):
+    query = "SELECT `auth_user`.`id`, " \
+            "`auth_user`.`password`, " \
+            "`auth_user`.`last_login`, " \
+            "`auth_user`.`is_superuser`, " \
+            "`auth_user`.`username`, " \
+            "`auth_user`.`first_name`, " \
+            "`auth_user`.`last_name`, " \
+            "`auth_user`.`email`, " \
+            "`auth_user`.`is_staff`, " \
+            "`auth_user`.`is_active`, " \
+            "`auth_user`.`date_joined` " \
+            "FROM `auth_user` WHERE `auth_user`.`username` = 'dbops'"
+    tree = parser.parse(query)
+    assert tree.table == 'auth_user'
+    assert tree.query_type == 'SELECT'
+    assert tree.query == query

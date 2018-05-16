@@ -35,8 +35,8 @@ pip-tools:
 .PHONY: bootstrap
 bootstrap: pip-tools  ## bootstrap the development environment
 	pip install -U "setuptools==32.3.1"
-	pip install -U "pip==9.0.1"
-	pip-sync requirements.txt requirements_dev.txt
+	pip install -U pip
+	pip install -r requirements.txt -r requirements_dev.txt
 	pip install --editable .
 
 
@@ -60,6 +60,7 @@ clean-test: ## remove test and coverage artifacts
 	rm -fr .tox/
 	rm -f .coverage
 	rm -fr htmlcov/
+	rm -rf .pytest_cache
 
 lint: ## check style with pylint
 	pylint etcdb
@@ -68,7 +69,7 @@ test: ## run tests quickly with the default Python
 	py.test -x --cov=etcdb --cov-report term-missing tests/unit
 
 test-functional: ## run functional tests. Vagrant machines must run.
-	py.test -xv tests/functional
+	py.test -sxv tests/functional
 
 
 test-all: ## run tests on every Python version with tox
@@ -103,6 +104,7 @@ install: clean ## install the package to the active Python's site-packages
 docker-start:
 	@docker run \
 		-v $(shell pwd):/etcdb \
+		--rm \
 		-it \
 		ubuntu:xenial \
 		/bin/bash -l
@@ -110,5 +112,6 @@ docker-start:
 docker-test-func:
 	@docker run \
 		-v $(shell pwd):/etcdb \
+		--rm \
 		ubuntu:xenial \
 		/bin/bash -l /etcdb/support/run_func_test.sh

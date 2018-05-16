@@ -103,7 +103,7 @@ def test_wait_after_increases_modified(cursor):
     p.join(timeout=10)
     modified_index = q.get()
 
-    assert modified_index == wait_index
+    assert modified_index > wait_index
 
 
 def test_select_sets_modified_index(cursor):

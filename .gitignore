@@ -60,3 +60,5 @@ target/
 /.idea/
 /vagrant/.vagrant/
 /etcdb/sqlparser/parser.out
+/tests/developement/
+/.pytest_cache/
