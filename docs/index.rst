@@ -16,7 +16,8 @@ Contents:
    usage
    modules
    contributing
-   authorshistory
+   authors
+   history
 
 Indices and tables
 ==================

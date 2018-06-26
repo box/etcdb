@@ -7,6 +7,7 @@ A client can acquire a reader lock if there are no writers.
 
 
 """
+import json
 import time
 import uuid
 
@@ -33,15 +34,77 @@ class Lock(object):
         self._lock_prefix = lock_prefix
         self._id = lock_id
 
-    def acquire(self, timeout=LOCK_WAIT_TIMEOUT, ttl=LOCK_WAIT_TIMEOUT):
+    @property
+    def id(self):  # pylint: disable=invalid-name
+        """Lock identifier"""
+        return self._id
+
+    @property
+    def _value(self):
+        key = "/{db}/{tbl}/{lock_prefix}".format(
+            db=self._db,
+            tbl=self._tbl,
+            lock_prefix=self._lock_prefix
+        )
+
+        if self._id:
+            key += "/%s" % self._id
+        else:
+            return None
+
+        try:
+            result = self._etcd_client.read(key)
+            LOG.debug('Result %s: %s', key, result)
+            return result.node['value']
+        except EtcdKeyNotFound:
+            return None
+
+    def __get_property(self, prop):
+        try:
+            return json.loads(self._value)[prop]
+        except TypeError:
+            return None
+
+    @property
+    def author(self):
+        """
+        :return: String that identifies who acquired the lock.
+        :rtype: str
+        """
+        return self.__get_property('author')
+
+    @property
+    def reason(self):
+        """
+        :return: String that explains why lock was acquired.
+        :rtype: str
+        """
+        return self.__get_property('reason')
+
+    @property
+    def created_at(self):
+        """
+        :return: When the lock was acquired in Unix timestamp.
+        :rtype: int
+        """
+        prop = self.__get_property('created_at') or 0
+        return int(prop)
+
+    def acquire(self, timeout=LOCK_WAIT_TIMEOUT, ttl=LOCK_WAIT_TIMEOUT, **kwargs):
         """Get a lock
 
         :param timeout: Timeout to acquire a lock.
         :type timeout: int
-        :param ttl: Place a lock on this time in seconds
+        :param ttl: Place a lock on this time in seconds. 0 for permanent lock.
+        :type ttl: int
+        :param kwargs: Keyword arguments.
+
+            * **author** (``str``) - Who requests the lock. By default, 'etcdb'.
+            * **reason** (``str``) - Human readable reason to get the lock. By default, 'etcdb internal operation'.
         :raise InternalError: This class shouldn't be used directly and
             if user doesn't set lock_prefix the method should
-            raise exception."""
+            raise exception.
+        :raise OperationalError: If lock wait timeout expires."""
         if not self._lock_prefix:
             raise InternalError('_lock_prefix must be set')
 
@@ -55,13 +118,18 @@ class Lock(object):
             key += "/%s" % self._id
 
         LOG.debug('Lock: %s requested', key)
+        key_value = {
+            'author': kwargs.get('author', 'etcdb'),
+            'reason': kwargs.get('reason', 'etcdb internal operation')
+        }
 
         expires = time.time() + timeout
         while time.time() < expires:
             try:
+                key_value['created_at'] = int(time.time())
                 self._etcd_client.compare_and_swap(
                     key,
-                    '',
+                    json.dumps(key_value),
                     ttl=ttl,
                     prev_exist=False)
                 LOG.debug('Lock: %s acquired', key)
@@ -152,7 +220,7 @@ class WriteLock(Lock):
                                         lock_prefix='_lock_write',
                                         lock_id=lock_id)
 
-    def acquire(self, timeout=LOCK_WAIT_TIMEOUT, ttl=LOCK_WAIT_TIMEOUT):
+    def acquire(self, timeout=LOCK_WAIT_TIMEOUT, ttl=LOCK_WAIT_TIMEOUT, **kwargs):
         """Get a write lock"""
         meta_lock = MetaLock(self._etcd_client, self._db, self._tbl)
         meta_lock.acquire(timeout=META_LOCK_WAIT_TIMEOUT,
@@ -162,7 +230,12 @@ class WriteLock(Lock):
             expires = time.time() + timeout
             while time.time() < expires:
                 if not self.writers() and not self.readers():
-                    super(WriteLock, self).acquire(timeout=timeout, ttl=ttl)
+                    super(WriteLock, self).acquire(
+                        timeout=timeout,
+                        ttl=ttl,
+                        author=kwargs.get('author', 'etcdb'),
+                        reason=kwargs.get('reason', 'etcdb internal operation')
+                    )
                     return self._id
 
             raise OperationalError('Lock wait timeout')
@@ -181,7 +254,7 @@ class ReadLock(Lock):
                                        lock_prefix='_lock_read',
                                        lock_id=lock_id)
 
-    def acquire(self, timeout=LOCK_WAIT_TIMEOUT, ttl=LOCK_WAIT_TIMEOUT):
+    def acquire(self, timeout=LOCK_WAIT_TIMEOUT, ttl=LOCK_WAIT_TIMEOUT, **kwargs):
         """Get a read lock"""
         meta_lock = MetaLock(self._etcd_client, self._db, self._tbl)
         meta_lock.acquire(timeout=META_LOCK_WAIT_TIMEOUT,
@@ -191,8 +264,12 @@ class ReadLock(Lock):
             expires = time.time() + timeout
             while time.time() < expires:
                 if not self.writers():
-                    super(ReadLock, self).acquire(timeout=timeout,
-                                                  ttl=ttl)
+                    super(ReadLock, self).acquire(
+                        timeout=timeout,
+                        ttl=ttl,
+                        author=kwargs.get('author', 'etcdb'),
+                        reason=kwargs.get('reason', 'etcdb internal operation')
+                    )
                     return self._id
 
             raise OperationalError('Lock wait timeout')

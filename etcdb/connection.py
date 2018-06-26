@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
 """Connection class definition"""
-import inspect
 
 from pyetcd.client import Client
 
@@ -60,7 +59,9 @@ class Connection(object):
         :param kwargs: input dictionary with keyword arguments.
         :return: dictionary without non-allowed keys.
         """
-        allowed_kwargs = inspect.getargspec(Client.__init__).args
+        allowed_kwargs = [
+            'host', 'port', 'srv_domain', 'version_prefix', 'protocol', 'allow_reconnect'
+        ]
         args = {}
         for arg in kwargs:
             if arg in allowed_kwargs:
