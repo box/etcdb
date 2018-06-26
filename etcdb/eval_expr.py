@@ -16,7 +16,8 @@ class EtcdbFunction(object):
     :type function_name: callable
     :param group: True if the functions is aggregate function
     :type group: bool
-    :param *args: Arguments to pass to function_name"""
+    :param args: Arguments to pass to function_name
+    :param kwargs: Keyword arguments"""
     def __init__(self, *args, **kwargs):
 
         self._function = args[0]

@@ -2,13 +2,6 @@
 # -*- coding: utf-8 -*-
 import os
 
-try:  # for pip >= 10
-    # noinspection PyProtectedMember,PyPackageRequirements
-    from pip._internal.req import parse_requirements
-except ImportError:  # for pip <= 9.0.3
-    # noinspection PyPackageRequirements
-    from pip.req import parse_requirements
-
 from setuptools import setup, find_packages
 
 # This is to workaround error: Operation not permitted
@@ -22,16 +15,16 @@ with open('README.rst') as readme_file:
 with open('HISTORY.rst') as history_file:
     history = history_file.read()
 
-requirements = [str(ir.req) for ir in
-                parse_requirements('requirements.txt', session=False)]
+with open('requirements.txt') as f:
+    requirements = f.read().strip().split('\n')
 
-test_requirements = [str(ir.req) for ir in
-                     parse_requirements('requirements_dev.txt',
-                                        session=False)]
+
+with open('requirements_dev.txt') as f:
+    test_requirements = f.read().strip().split('\n')
 
 setup(
     name='etcdb',
-    version='1.5.16',
+    version='1.5.18',
     description="PEP 249 compatible driver for Etcd",
     long_description=readme + '\n\n' + history,
     author="Box TechOps Database Team",

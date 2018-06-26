@@ -3,7 +3,7 @@ import json
 
 import time
 
-from pyetcd import EtcdException
+from pyetcd import EtcdEmptyResponse
 
 from etcdb import OperationalError, InternalError
 from etcdb.eval_expr import eval_expr, EtcdbFunction
@@ -95,7 +95,7 @@ def get_row_by_primary_key(etcd_client, db, table, primary_key, **kwargs):
         try:
             etcd_response = etcd_client.read(key, **client_kwargs)
             break
-        except EtcdException as err:
+        except EtcdEmptyResponse as err:
             LOG.warning("Retry #%d after error: %s", i, err)
             time.sleep(1)
     if not etcd_response:
