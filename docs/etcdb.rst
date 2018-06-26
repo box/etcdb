@@ -6,7 +6,8 @@ Subpackages
 
 .. toctree::
 
-    etcdb.constants
+    etcdb.execute
+    etcdb.log
     etcdb.sqlparser
 
 Submodules
@@ -24,14 +25,6 @@ etcdb.connection module
 -----------------------
 
 .. automodule:: etcdb.connection
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
-etcdb.converters module
------------------------
-
-.. automodule:: etcdb.converters
     :members:
     :undoc-members:
     :show-inheritance:
@@ -76,10 +69,34 @@ etcdb.etcdtimestamp module
     :undoc-members:
     :show-inheritance:
 
-etcdb.times module
-------------------
+etcdb.eval\_expr module
+-----------------------
 
-.. automodule:: etcdb.times
+.. automodule:: etcdb.eval_expr
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+etcdb.exception module
+----------------------
+
+.. automodule:: etcdb.exception
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+etcdb.lock module
+-----------------
+
+.. automodule:: etcdb.lock
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+etcdb.resultset module
+----------------------
+
+.. automodule:: etcdb.resultset
     :members:
     :undoc-members:
     :show-inheritance:
