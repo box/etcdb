@@ -59,12 +59,13 @@ def p_opt_after(p):
 
 
 def p_update_table_statement(p):
-    """update_table_statement : UPDATE identifier SET col_expr_list opt_WHERE """
+    """update_table_statement : UPDATE identifier SET col_expr_list opt_WHERE opt_USE_LOCK"""
     tree = SQLTree()
     tree.query_type = "UPDATE"
     tree.table = p[2]
     tree.expressions = p[4]
     tree.where = p[5]
+    tree.lock = p[6]
     p[0] = tree
 
 
@@ -512,6 +513,16 @@ def p_select_alias(p):
 def p_table_wild(p):
     """table_wild : identifier '.' '*' """
     p[0] = ("*", p[1])
+
+
+def p_opt_USE_LOCK_empty(p):
+    """opt_USE_LOCK : """
+    p[0] = None
+
+
+def p_opt_USE_LOCK(p):
+    """opt_USE_LOCK : USE LOCK STRING_VALUE """
+    p[0] = p[3]
 
 
 def p_opt_WHERE_empty(p):

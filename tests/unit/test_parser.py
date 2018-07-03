@@ -1010,6 +1010,18 @@ def test_update(parser):
     assert tree.query_type == "UPDATE"
     assert tree.table == 'auth_user'
     assert tree.db is None
+    assert tree.lock is None
+
+
+def test_update_with_lock(parser):
+    query = "UPDATE `auth_user` SET `last_login` = '2016-10-10 19:19:56' " \
+            "WHERE `auth_user`.`id` = '2' USE LOCK 'aaa-bbb-ccc'"
+    tree = parser.parse(query)
+    assert tree.success
+    assert tree.query_type == "UPDATE"
+    assert tree.table == 'auth_user'
+    assert tree.db is None
+    assert tree.lock == 'aaa-bbb-ccc'
 
 
 def test_select_count_star(parser):

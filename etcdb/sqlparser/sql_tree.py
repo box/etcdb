@@ -18,6 +18,7 @@ class SQLTree(object):
             'direction': 'ASC'
         }
         self.wait = False
+        self.lock = None
 
     def reset(self):
         self.__init__()
