@@ -19,7 +19,10 @@ def etcdb_connection():
         pass
     cur.execute('CREATE DATABASE foo')
     yield connection
-    cur.execute('DROP DATABASE foo')
+    try:
+        cur.execute('DROP DATABASE foo')
+    except OperationalError:
+        pass
 
 
 @pytest.yield_fixture
@@ -39,4 +42,7 @@ def cursor():
     cur = connection.cursor()
     cur.execute('CREATE DATABASE foo')
     yield cur
-    cur.execute('DROP DATABASE foo')
+    try:
+        cur.execute('DROP DATABASE foo')
+    except OperationalError:
+        pass

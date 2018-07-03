@@ -188,9 +188,13 @@ class Lock(object):
         try:
             result = self._etcd_client.read(key)
             for node in result.node['nodes']:
-                locks.append(lock_class(self._etcd_client,
-                                        self._db, self._tbl,
-                                        lock_id=node['key']))
+                locks.append(
+                    lock_class(
+                        self._etcd_client,
+                        self._db, self._tbl,
+                        lock_id=node['key'].split('/')[4]
+                    )
+                )
         except (KeyError, EtcdKeyNotFound):
             pass
         return locks
