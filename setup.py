@@ -24,7 +24,7 @@ with open('requirements_dev.txt') as f:
 
 setup(
     name='etcdb',
-    version='1.6.0',
+    version='1.7.0',
     description="PEP 249 compatible driver for Etcd",
     long_description=readme + '\n\n' + history,
     author="Box TechOps Database Team",
