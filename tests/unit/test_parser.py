@@ -872,6 +872,22 @@ def test_insert(parser):
     }
 
 
+def test_insert_with_lock(parser):
+    query = "INSERT INTO `django_migrations` (`app`, `name`, `applied`) " \
+            "VALUES ('auth', '0003_alter_user_email_max_length', '2016-09-30 22:01:02.851495') " \
+            "USE LOCK 'aaa-bbb-ccc'"
+    tree = parser.parse(query)
+    assert tree.success
+    assert tree.table == 'django_migrations'
+    assert tree.query_type == "INSERT"
+    assert tree.fields == {
+        'app': 'auth',
+        'name': '0003_alter_user_email_max_length',
+        'applied': '2016-09-30 22:01:02.851495'
+    }
+    assert tree.lock == 'aaa-bbb-ccc'
+
+
 def test_drop_database(parser):
     query = "DROP DATABASE foo"
     tree = parser.parse(query)

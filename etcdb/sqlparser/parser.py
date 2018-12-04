@@ -121,7 +121,7 @@ def p_opt_if_exists(p):
 
 
 def p_insert_statement(p):
-    """insert_statement : INSERT INTO identifier opt_fieldlist VALUES '(' values_list ')'"""
+    """insert_statement : INSERT INTO identifier opt_fieldlist VALUES '(' values_list ')' opt_USE_LOCK"""
     tree = SQLTree()
     tree.query_type = "INSERT"
     tree.table = p[3]
@@ -135,7 +135,7 @@ def p_insert_statement(p):
         raise SQLParserError(msg)
     for i in xrange(n_fields):
         tree.fields[p[4][i]] = p[7][i]
-
+    tree.lock = p[9]
     p[0] = tree
 
 
