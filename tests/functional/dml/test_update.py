@@ -46,7 +46,7 @@ def test_update_doesnt_release_lock(cursor, etcdb_connection):
     cursor.execute('CREATE TABLE t1(id INT NOT NULL PRIMARY KEY AUTO_INCREMENT, name VARCHAR(255))')
     cursor.execute("INSERT INTO t1(id, name) VALUES (1, 'aaa')")
     lock = WriteLock(etcdb_connection.client, 'foo', 't1')
-    lock.acquire()
+    lock.acquire(ttl=0)
     cursor.execute("UPDATE t1 SET name = 'bbb' WHERE id = 1 USE LOCK '%s'" % lock.id)
     with pytest.raises(OperationalError):
         cursor.execute("UPDATE t1 SET name = 'bbb' WHERE id = 1")
