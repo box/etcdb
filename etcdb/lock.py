@@ -27,12 +27,12 @@ class Lock(object):
     :param db: Database name.
     :param tbl: Table name.
     """
-    def __init__(self, etcd_client, db, tbl, lock_prefix=None, lock_id=None):  # pylint: disable=too-many-arguments
+    def __init__(self, etcd_client, db, tbl, **kwargs):
         self._etcd_client = etcd_client
         self._db = db
         self._tbl = tbl
-        self._lock_prefix = lock_prefix
-        self._id = lock_id
+        self._lock_prefix = kwargs.get('lock_prefix', None)
+        self._id = kwargs.get('lock_id', None)
 
     @property
     def id(self):  # pylint: disable=invalid-name
@@ -90,7 +90,10 @@ class Lock(object):
         prop = self.__get_property('created_at') or 0
         return int(prop)
 
-    def acquire(self, timeout=LOCK_WAIT_TIMEOUT, ttl=LOCK_WAIT_TIMEOUT, **kwargs):
+    def acquire(self,
+                timeout=LOCK_WAIT_TIMEOUT,
+                ttl=LOCK_WAIT_TIMEOUT,
+                **kwargs):
         """Get a lock
 
         :param timeout: Timeout to acquire a lock.
@@ -99,8 +102,10 @@ class Lock(object):
         :type ttl: int
         :param kwargs: Keyword arguments.
 
-            * **author** (``str``) - Who requests the lock. By default, 'etcdb'.
-            * **reason** (``str``) - Human readable reason to get the lock. By default, 'etcdb internal operation'.
+            * **author** (``str``) - Who requests the lock.
+                By default, 'etcdb'.
+            * **reason** (``str``) - Human readable reason to get the lock.
+                By default, 'etcdb internal operation'.
         :raise InternalError: This class shouldn't be used directly and
             if user doesn't set lock_prefix the method should
             raise exception.
@@ -224,7 +229,10 @@ class WriteLock(Lock):
                                         lock_prefix='_lock_write',
                                         lock_id=lock_id)
 
-    def acquire(self, timeout=LOCK_WAIT_TIMEOUT, ttl=LOCK_WAIT_TIMEOUT, **kwargs):
+    def acquire(self,
+                timeout=LOCK_WAIT_TIMEOUT,
+                ttl=LOCK_WAIT_TIMEOUT,
+                **kwargs):
         """Get a write lock"""
         meta_lock = MetaLock(self._etcd_client, self._db, self._tbl)
         meta_lock.acquire(timeout=META_LOCK_WAIT_TIMEOUT,
@@ -258,7 +266,10 @@ class ReadLock(Lock):
                                        lock_prefix='_lock_read',
                                        lock_id=lock_id)
 
-    def acquire(self, timeout=LOCK_WAIT_TIMEOUT, ttl=LOCK_WAIT_TIMEOUT, **kwargs):
+    def acquire(self,
+                timeout=LOCK_WAIT_TIMEOUT,
+                ttl=LOCK_WAIT_TIMEOUT,
+                **kwargs):
         """Get a read lock"""
         meta_lock = MetaLock(self._etcd_client, self._db, self._tbl)
         meta_lock.acquire(timeout=META_LOCK_WAIT_TIMEOUT,

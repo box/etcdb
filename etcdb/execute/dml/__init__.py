@@ -18,7 +18,8 @@ def get_exclusive_lock(etcd_client, tree, db):
     :param db: Database name. It doesn't necessary come from the parsing tree.
         That's why it has to specified.
     :type db: str
-    :return: Write lock on a table from the parsing tree in the given database db.
+    :return: Write lock on a table from the parsing tree in the given
+        database db.
     :rtype: WriteLock
     """
     lock = WriteLock(etcd_client, db, tree.table)
@@ -31,5 +32,7 @@ def get_exclusive_lock(etcd_client, tree, db):
                 valid_lock = True
 
         if not valid_lock:
-            raise OperationalError('Lock %s has no grant to update' % tree.lock)
+            raise OperationalError(
+                'Lock %s has no grant to update' % tree.lock
+            )
     return lock

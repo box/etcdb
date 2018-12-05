@@ -63,6 +63,7 @@ clean-test: ## remove test and coverage artifacts
 	rm -rf .pytest_cache
 
 lint: ## check style with pylint
+	pycodestyle etcdb
 	pylint etcdb
 
 test: ## run tests quickly with the default Python

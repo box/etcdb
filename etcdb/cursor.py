@@ -30,10 +30,14 @@ class ColInfo(object):
 
 
 class Cursor(object):
-    """These objects represent a database cursor, which is used to manage the context of a fetch operation.
-    Cursors created from the same connection are not isolated, i.e. , any changes done to the database
-    by a cursor are immediately visible by the other cursors. Cursors created from different connections can
-    or can not be isolated, depending on how the transaction support is implemented
+    """These objects represent a database cursor, which is used to manage
+    the context of a fetch operation.
+    Cursors created from the same connection are not isolated, i.e. ,
+    any changes done to the database
+    by a cursor are immediately visible by the other cursors.
+    Cursors created from different connections can
+    or can not be isolated, depending on how
+    the transaction support is implemented
     (see also the connection's .rollback () and .commit () methods). """
 
     description = None
@@ -49,18 +53,22 @@ class Cursor(object):
         scale
         null_ok
 
-    The first two items ( name and type_code ) are mandatory, the other five are optional and are set to None
+    The first two items ( name and type_code ) are mandatory, the other five
+    are optional and are set to None
     if no meaningful values can be provided. """
 
     @property
     def rowcount(self):
         return self._rowcount
 
-    """This read-only attribute specifies the number of rows that the last .execute*() produced
-    (for DQL statements like SELECT ) or affected (for DML statements like UPDATE or INSERT )."""
+    """This read-only attribute specifies the number of rows that
+    the last .execute*() produced
+    (for DQL statements like SELECT ) or affected
+    (for DML statements like UPDATE or INSERT )."""
 
     arraysize = 1
-    """This read/write attribute specifies the number of rows to fetch at a time with .fetchmany().
+    """This read/write attribute specifies the number of rows
+    to fetch at a time with .fetchmany().
     It defaults to 1 meaning to fetch a single row at a time. """
 
     connection = None
@@ -186,12 +194,14 @@ class Cursor(object):
 
     @staticmethod
     def executemany(operation, **kwargs):
-        """Prepare a database operation (query or command) and then execute it against all parameter sequences
+        """Prepare a database operation (query or command) and then execute it
+        against all parameter sequences
         or mappings found in the sequence seq_of_parameters . """
         pass
 
     def fetchone(self):
-        """Fetch the next row of a query result set, returning a single sequence,
+        """Fetch the next row of a query result set, returning
+        a single sequence,
         or None when no more data is available."""
         try:
             return tuple(self._result_set.next())
@@ -199,7 +209,8 @@ class Cursor(object):
             return None
 
     def fetchmany(self, n):
-        """Fetch the next set of rows of a query result, returning a sequence of sequences (e.g. a list of tuples).
+        """Fetch the next set of rows of a query result, returning
+        a sequence of sequences (e.g. a list of tuples).
         An empty sequence is returned when no more rows are available. """
         rows = ()
         for i in xrange(n):
@@ -209,12 +220,13 @@ class Cursor(object):
         return rows
 
     def fetchall(self):
-        """Fetch all (remaining) rows of a query result, returning them as a sequence of sequences
-        (e.g. a list of tuples). Note that the cursor's arraysize attribute can affect
-        the performance of this operation."""
+        """Fetch all (remaining) rows of a query result, returning them as
+        a sequence of sequences
+        (e.g. a list of tuples). Note that the cursor's arraysize attribute
+        can affect the performance of this operation."""
 
         result = ()
-        if len(self._result_set)> 0:
+        if len(self._result_set) > 0:
             for row in self._result_set:
                 result += (tuple(row), )
             self._result_set.rows = []
@@ -222,13 +234,16 @@ class Cursor(object):
 
     @staticmethod
     def setinputsizes(sizes):
-        """This can be used before a call to .execute*() to predefine memory areas for the operation's parameters. """
+        """This can be used before a call to .execute*() to predefine
+        memory areas for the operation's parameters. """
         pass
 
     @staticmethod
     def setoutputsize(size):
-        """Set a column buffer size for fetches of large columns (e.g. LONG s, BLOB s, etc.). The column is specified
-        as an index into the result sequence. Not specifying the column will set the default size for all large columns
+        """Set a column buffer size for fetches of large columns (e.g. LONG s,
+        BLOB s, etc.). The column is specified
+        as an index into the result sequence. Not specifying
+        the column will set the default size for all large columns
         in the cursor. """
         pass
 

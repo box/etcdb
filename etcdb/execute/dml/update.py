@@ -23,7 +23,11 @@ def execute_update(etcd_client, tree, db):  # pylint: disable=too-many-locals
 
             table_row = get_row_by_primary_key(etcd_client, db, tree.table,
                                                primary_key)
-            key = '/{db}/{tbl}/{pk}'.format(db=db, tbl=tree.table, pk=primary_key)
+            key = '/{db}/{tbl}/{pk}'.format(
+                db=db,
+                tbl=tree.table,
+                pk=primary_key
+            )
 
             row = {}
             for column in table_columns:
