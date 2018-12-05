@@ -2,7 +2,6 @@ import json
 
 import pytest
 import requests
-import time
 
 import etcdb
 from etcdb import OperationalError

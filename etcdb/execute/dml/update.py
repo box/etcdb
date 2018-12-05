@@ -1,35 +1,19 @@
 """Implement UPDATE query."""
 import json
 
-from etcdb import OperationalError
 from etcdb.eval_expr import eval_expr
+from etcdb.execute.dml import get_exclusive_lock
 from etcdb.execute.dml.insert import get_table_columns
 from etcdb.execute.dml.select import list_table, get_row_by_primary_key
-from etcdb.lock import WriteLock
 
 
 def _update_key(etcd_client, key, value):
     etcd_client.write(key, value)
 
 
-def _get_lock(etcd_client, tree, db):
-    lock = WriteLock(etcd_client, db, tree.table)
-    if tree.lock is None:
-        lock.acquire()
-    else:
-        valid_lock = False
-        for write_lock in lock.writers():
-            if write_lock.id == tree.lock:
-                valid_lock = True
-
-        if not valid_lock:
-            raise OperationalError('Lock %s has no grant to update' % tree.lock)
-    return lock
-
-
 def execute_update(etcd_client, tree, db):  # pylint: disable=too-many-locals
     """Execute UPDATE query"""
-    lock = _get_lock(etcd_client, tree, db)
+    lock = get_exclusive_lock(etcd_client, tree, db)
     try:
 
         affected_rows = 0

@@ -68,7 +68,7 @@ lint: ## check style with pylint
 test: ## run tests quickly with the default Python
 	py.test -x --cov=etcdb --cov-report term-missing tests/unit
 
-test-functional: ## run functional tests. Vagrant machines must run.
+test-functional: ## run functional tests. Must be run in a Vagrant machine.
 	py.test -sxv tests/functional
 
 
