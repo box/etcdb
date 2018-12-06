@@ -60,7 +60,8 @@ class Connection(object):
         :return: dictionary without non-allowed keys.
         """
         allowed_kwargs = [
-            'host', 'port', 'srv_domain', 'version_prefix', 'protocol', 'allow_reconnect'
+            'host', 'port', 'srv_domain', 'version_prefix', 'protocol',
+            'allow_reconnect'
         ]
         args = {}
         for arg in kwargs:

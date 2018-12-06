@@ -66,12 +66,16 @@ def main(host, version):
             print('Query is interrupted')
 
 
-def _print_table(cursor, execution_time=0):
+def _print_table(cursor, execution_time=0.0):
     n_rows = cursor.n_rows
 
     def _print_dashes():
         columns = cursor.result_set.columns
-        printf('-' * (sum(c.print_width for c in columns) + 3 * cursor.n_cols + 1) + '\n')
+        printf(
+            '-' * (
+                sum(c.print_width for c in columns) + 3 * cursor.n_cols + 1
+            ) + '\n'
+        )
 
     def _print_header():
         printf("|")
@@ -106,7 +110,11 @@ def _print_table(cursor, execution_time=0):
     def _rows(num):
         return 'row' if num == 1 else 'rows'
 
-    printf("%d %s in set (%0.2f sec)\n\n" % (n_rows, _rows(n_rows), execution_time))
+    printf(
+        "%d %s in set (%0.2f sec)\n\n"
+        % (
+            n_rows, _rows(n_rows), execution_time)
+    )
 
 
 def printf(fmt, *args):

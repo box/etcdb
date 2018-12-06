@@ -78,7 +78,8 @@ def get_row_by_primary_key(etcd_client, db, table, primary_key, **kwargs):
 
     :Keyword Arguments:
             * **wait** (bool) - If True it will wait for a change in the key.
-            * **wait_index** (int) - When waiting you can specify index to wait for.
+            * **wait_index** (int) - When waiting you can specify index to
+                wait for.
     """
     key = "/{db}/{tbl}/{pk}".format(
         db=db,

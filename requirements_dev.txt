@@ -11,3 +11,4 @@ Sphinx
 psutil
 pytest-timeout
 pytest-cov
+pep8

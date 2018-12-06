@@ -4,9 +4,12 @@ states = (
     ('quoted', 'exclusive'),
 )
 reserved = [
-    'SELECT', 'VERSION', 'AUTO_INCREMENT', 'CREATE', 'DEFAULT', 'FULL', 'INTEGER', 'KEY', 'NULL',
-    'PRIMARY', 'SHOW', 'TABLE', 'TABLES', 'VARCHAR', 'NOT', 'DATETIME', 'DATABASE', 'DATABASES',
-    'USE', 'INT', 'FROM', 'COMMIT', 'WHERE', 'OR', 'AND', 'IS', 'SET', 'AUTOCOMMIT',
+    'SELECT', 'VERSION', 'AUTO_INCREMENT', 'CREATE', 'DEFAULT', 'FULL',
+    'INTEGER', 'KEY', 'NULL',
+    'PRIMARY', 'SHOW', 'TABLE', 'TABLES', 'VARCHAR', 'NOT', 'DATETIME',
+    'DATABASE', 'DATABASES',
+    'USE', 'INT', 'FROM', 'COMMIT', 'WHERE', 'OR', 'AND', 'IS', 'SET',
+    'AUTOCOMMIT',
     'LONGTEXT', 'SMALLINT', 'UNSIGNED', 'BOOL', 'TINYINT', 'UNIQUE', 'NAMES',
     'INSERT', 'INTO', 'VALUES', 'DROP', 'LIMIT', 'AS', 'UPDATE', 'COUNT',
     'ORDER', 'BY', 'ASC', 'DESC',
