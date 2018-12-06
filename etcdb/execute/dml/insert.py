@@ -4,7 +4,7 @@ import json
 from pyetcd import EtcdKeyNotFound
 
 from etcdb import IntegrityError, ProgrammingError
-from etcdb.lock import WriteLock
+from etcdb.execute.dml import get_exclusive_lock
 from etcdb.resultset import ColumnSet
 
 
@@ -53,6 +53,7 @@ def _get_next_auto_inc(etcd_client, db, tbl):
     except EtcdKeyNotFound:
         return 1
 
+
 def _set_next_auto_inc(etcd_client, db, tbl):
     auto_inc_value = _get_next_auto_inc(etcd_client, db, tbl)
     key = '/{db}/{tbl}/_auto_inc'.format(
@@ -60,7 +61,6 @@ def _set_next_auto_inc(etcd_client, db, tbl):
         tbl=tbl,
     )
     etcd_client.write(key, auto_inc_value + 1)
-
 
 
 def insert(etcd_client, tree, db):
@@ -75,8 +75,7 @@ def insert(etcd_client, tree, db):
     :type db: str
     :raise IntegrityError: if duplicate primary key
     """
-    lock = WriteLock(etcd_client, db, tree.table)
-    lock.acquire()
+    lock = get_exclusive_lock(etcd_client, tree, db)
 
     primary_key = None
 
@@ -111,4 +110,5 @@ def insert(etcd_client, tree, db):
         raise IntegrityError("Primary key is not given")
 
     finally:
-        lock.release()
+        if tree.lock is None:
+            lock.release()

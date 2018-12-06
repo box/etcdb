@@ -4,16 +4,20 @@ PEP-249 implementation for etcd
 """
 import time
 
-import logging
-from logging.handlers import WatchedFileHandler
 from threading import Lock
+
 
 from enum import Enum
 
-from .exception import (Error, Warning, InterfaceError, DatabaseError, # pylint: disable=redefined-builtin
-                        DataError,
-                        OperationalError, IntegrityError, InternalError,
-                        ProgrammingError, NotSupportedError)
+from .exception import (  # pylint: disable=redefined-builtin
+    Error, Warning, InterfaceError, DatabaseError,
+    DataError,
+    OperationalError,
+    IntegrityError,
+    InternalError,
+    ProgrammingError,
+    NotSupportedError
+)
 
 from .etcddate import EtcdDate
 from .etcdstring import EtcdString
@@ -22,7 +26,7 @@ from .etcdtimestamp import EtcdTimestamp
 
 __author__ = 'Box TechOps Database Team'
 __email__ = 'oss@box.com'
-__version__ = '1.6.0'
+__version__ = '1.7.0'
 
 
 def _split_version(version):
@@ -54,7 +58,12 @@ ETCDTABLELOCK = Enum('EtcdTableLock', 'read write')
 PARSER_LOCK = Lock()
 
 
-def Timestamp(year, month, day, hour, minute, second):  # pylint: disable=invalid-name,too-many-arguments
+def Timestamp(year,  # pylint: disable=invalid-name,too-many-arguments
+              month,
+              day,
+              hour,
+              minute,
+              second):
     """
     This function constructs an object holding a time stamp value.
 
@@ -71,8 +80,10 @@ def Timestamp(year, month, day, hour, minute, second):  # pylint: disable=invali
 
 def DateFromTicks(ticks):  # pylint: disable=invalid-name
     """
-    This function constructs an object holding a time value from the given ticks value
-    (number of seconds since the epoch; see the documentation of the standard Python time module for details).
+    This function constructs an object holding a time value from
+    the given ticks value
+    (number of seconds since the epoch; see the documentation of
+    the standard Python time module for details).
 
     :param ticks: Seconds since Epoch
     :return: EtcdDate
@@ -82,8 +93,10 @@ def DateFromTicks(ticks):  # pylint: disable=invalid-name
 
 def TimeFromTicks(ticks):  # pylint: disable=invalid-name
     """
-    This function constructs an object holding a time value from the given ticks value
-    (number of seconds since the epoch; see the documentation of the standard Python time module for details).
+    This function constructs an object holding a time value from
+    the given ticks value
+    (number of seconds since the epoch; see the documentation of
+    the standard Python time module for details).
 
     :param ticks: Seconds since Epoch
     :return: EtcdTime
@@ -92,8 +105,10 @@ def TimeFromTicks(ticks):  # pylint: disable=invalid-name
 
 
 def TimestampFromTicks(ticks):  # pylint: disable=invalid-name
-    """This function constructs an object holding a time stamp value from the given ticks value
-     (number of seconds since the epoch; see the documentation of the standard Python time module for details).
+    """This function constructs an object holding a time stamp value from
+    the given ticks value
+     (number of seconds since the epoch; see the documentation of
+     the standard Python time module for details).
 
      :param ticks: Seconds since Epoch
      :return: EtcTimestamp
@@ -129,6 +144,7 @@ def Binary(string):  # pylint: disable=invalid-name
     """This function constructs an object capable of holding
     a binary (long) string value. """
     return EtcdString(string)
+
 
 from .connection import Connect  # pylint: disable=wrong-import-position
 connect = Connect  # pylint: disable=invalid-name

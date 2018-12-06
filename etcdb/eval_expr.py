@@ -150,7 +150,7 @@ def eval_predicate(row, tree):
         raise SQLParserError('%s is not implemented' % tree[0])
 
 
-def eval_bool_primary(row, tree): # pylint: disable=too-many-return-statements
+def eval_bool_primary(row, tree):  # pylint: disable=too-many-return-statements
     """Evaluate bool_primary"""
 
     if tree[0] == 'IS NULL':

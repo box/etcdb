@@ -24,7 +24,11 @@ def execute_delete(etcd_client, tree, db):
             table_row = get_row_by_primary_key(etcd_client, db, tree.table,
                                                primary_key)
 
-            key = "/{db}/{tbl}/{pk}".format(db=db, tbl=tree.table, pk=primary_key)
+            key = "/{db}/{tbl}/{pk}".format(
+                db=db,
+                tbl=tree.table,
+                pk=primary_key
+            )
 
             if tree.where:
                 expr = tree.where
